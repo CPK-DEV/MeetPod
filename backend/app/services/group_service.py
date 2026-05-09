@@ -13,6 +13,7 @@ def create_group(creator_id: str, body: GroupCreate) -> Group:
     sb.table("group_members").insert(
         {"group_id": row["id"], "user_id": creator_id, "role": "owner"}
     ).execute()
+    sb.table("chat_rooms").insert({"kind": "group", "ref_id": row["id"]}).execute()
     return Group(**row)
 
 

@@ -1,13 +1,21 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useNavigation } from '@react-navigation/native';
 import { MeetupsPlaceholder } from '@/screens/placeholders/MeetupsPlaceholder';
 import { GroupsStack } from './GroupsStack';
 import { ChatsPlaceholder } from '@/screens/placeholders/ChatsPlaceholder';
 import { MeStack } from './MeStack';
+import { useInviteStore } from '@/store/inviteStore';
 
 const Tab = createBottomTabNavigator();
 
 export function MainTabs() {
+  const nav = useNavigation<any>();
+  const consume = useInviteStore((s) => s.consume);
+  useEffect(() => {
+    const code = consume();
+    if (code) nav.navigate('InviteAccept', { code });
+  }, []);
   return (
     <Tab.Navigator>
       <Tab.Screen name="Meetups" component={MeetupsPlaceholder} />

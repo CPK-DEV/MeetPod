@@ -28,3 +28,6 @@ BEGIN
   RETURN uid;
 END;
 $$;
+
+GRANT USAGE ON SCHEMA test TO authenticated;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA test TO authenticated;

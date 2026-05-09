@@ -13,7 +13,15 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "ios": { "supportsTablet": false, "bundleIdentifier": "com.cpkworks.meetpod" },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.cpkworks.meetpod",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "약속 시간 동안 친구와 위치를 공유하기 위해 사용합니다.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "약속 시간 동안 백그라운드에서도 위치를 공유하기 위해 사용합니다.",
+        "UIBackgroundModes": ["location", "fetch"]
+      }
+    },
     "android": {
       "package": "com.cpkworks.meetpod",
       "adaptiveIcon": {
@@ -21,11 +29,20 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-secure-store"]
+    "plugins": [
+      "expo-secure-store",
+      ["expo-location", { "locationAlwaysAndWhenInUsePermission": "약속 시간 동안 백그라운드에서도 위치를 공유합니다." }]
+    ]
   }
 }

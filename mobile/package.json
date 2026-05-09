@@ -10,11 +10,14 @@
   },
   "jest": {
     "preset": "jest-expo",
-    "setupFilesAfterEach": [
+    "setupFilesAfterFramework": [
       "@testing-library/jest-native/extend-expect"
     ],
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    },
     "transformIgnorePatterns": [
-      "node_modules/(?!((jest-)?react-native|@react-native|@react-navigation|expo(nent)?|@expo(nent)?/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg)/)"
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?|@react-navigation|expo(nent)?|@expo(nent)?/.*|expo-modules-core|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg|zustand)/)"
     ]
   },
   "dependencies": {
@@ -40,7 +43,8 @@
     "@testing-library/react-native": "^13.3.3",
     "@types/react": "~19.1.0",
     "babel-plugin-module-resolver": "^5.0.3",
-    "jest": "^30.4.2",
+    "babel-preset-expo": "^55.0.21",
+    "jest": "^29.7.0",
     "jest-expo": "^55.0.17",
     "typescript": "~5.9.2"
   },

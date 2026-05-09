@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import { MeetupsStack } from './MeetupsStack';
 import { GroupsStack } from './GroupsStack';
-import { ChatsPlaceholder } from '@/screens/placeholders/ChatsPlaceholder';
+import { ChatsStack } from './ChatsStack';
 import { MeStack } from './MeStack';
 import { useInviteStore } from '@/store/inviteStore';
 
@@ -20,7 +20,7 @@ export function MainTabs() {
     <Tab.Navigator>
       <Tab.Screen name="Meetups" component={MeetupsStack} options={{ headerShown: false }} />
       <Tab.Screen name="Groups" component={GroupsStack} options={{ headerShown: false }} />
-      <Tab.Screen name="Chats" component={ChatsPlaceholder} />
+      <Tab.Screen name="Chats" component={ChatsStack} options={{ headerShown: false }} />
       <Tab.Screen name="Me" component={MeStack} options={{ headerShown: false }} />
     </Tab.Navigator>
   );

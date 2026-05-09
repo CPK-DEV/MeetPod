@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
-import { MeetupsPlaceholder } from '@/screens/placeholders/MeetupsPlaceholder';
+import { MeetupsStack } from './MeetupsStack';
 import { GroupsStack } from './GroupsStack';
 import { ChatsPlaceholder } from '@/screens/placeholders/ChatsPlaceholder';
 import { MeStack } from './MeStack';
@@ -18,7 +18,7 @@ export function MainTabs() {
   }, []);
   return (
     <Tab.Navigator>
-      <Tab.Screen name="Meetups" component={MeetupsPlaceholder} />
+      <Tab.Screen name="Meetups" component={MeetupsStack} options={{ headerShown: false }} />
       <Tab.Screen name="Groups" component={GroupsStack} options={{ headerShown: false }} />
       <Tab.Screen name="Chats" component={ChatsPlaceholder} />
       <Tab.Screen name="Me" component={MeStack} options={{ headerShown: false }} />

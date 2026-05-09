@@ -12,6 +12,9 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    from app.routers import auth as auth_router
+    app.include_router(auth_router.router)
+
     @app.get("/api/healthz")
     def healthz() -> dict:
         return {"ok": True}

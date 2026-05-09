@@ -26,6 +26,8 @@ def create_app() -> FastAPI:
     app.include_router(meetups_router.router)
     from app.routers import reminders as reminders_router
     app.include_router(reminders_router.router)
+    from app.routers import chat as chat_router
+    app.include_router(chat_router.router)
 
     @app.get("/api/healthz")
     def healthz() -> dict:

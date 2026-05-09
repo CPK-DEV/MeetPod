@@ -41,6 +41,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         'User';
       me = await bootstrap(displayName);
     }
+    if (me.handle) {
+      try {
+        const { registerPush } = await import('@/lib/push_registrar');
+        await registerPush();
+      } catch {}
+    }
     set({ profile: me, status: me.handle ? 'ready' : 'needsHandle' });
   },
 
@@ -50,6 +56,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signOut: async () => {
+    try {
+      const { unregisterPush } = await import('@/lib/push_registrar');
+      await unregisterPush();
+    } catch {}
     await supabase.auth.signOut();
     set({ session: null, profile: null, status: 'unauthenticated' });
   },

@@ -42,7 +42,8 @@
     },
     "plugins": [
       "expo-secure-store",
-      ["expo-location", { "locationAlwaysAndWhenInUsePermission": "약속 시간 동안 백그라운드에서도 위치를 공유합니다." }]
+      ["expo-location", { "locationAlwaysAndWhenInUsePermission": "약속 시간 동안 백그라운드에서도 위치를 공유합니다." }],
+      ["expo-notifications", { "icon": "./assets/icon.png", "color": "#111111" }]
     ]
   }
 }

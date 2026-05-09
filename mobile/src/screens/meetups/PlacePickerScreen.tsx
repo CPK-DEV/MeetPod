@@ -23,7 +23,13 @@ export function PlacePickerScreen() {
 
   async function pick(s: PlaceSuggestion) {
     const d = await placeDetails(s.place_id, sessionToken);
-    nav.navigate({ name: 'MeetupCreate', params: { picked: d }, merge: true });
+    nav.goBack();
+    setTimeout(() => {
+      // 직전 화면이 받을 수 있도록 setParams 사용 — 안전하게 양쪽 화면 모두 처리
+      const parent = nav.getState();
+      const prev = parent.routes[parent.index - 1];
+      if (prev) nav.navigate({ name: prev.name, params: { picked: d }, merge: true } as any);
+    }, 0);
   }
 
   return (

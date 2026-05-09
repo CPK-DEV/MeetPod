@@ -14,6 +14,8 @@ def create_app() -> FastAPI:
 
     from app.routers import auth as auth_router
     app.include_router(auth_router.router)
+    from app.routers import profiles as profiles_router
+    app.include_router(profiles_router.router)
 
     @app.get("/api/healthz")
     def healthz() -> dict:

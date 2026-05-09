@@ -38,3 +38,8 @@ def set_handle(user_id: str, handle: str) -> Profile:
 
     sb.table("profiles").update({"handle": handle}).eq("id", user_id).execute()
     return existing.model_copy(update={"handle": handle})
+
+
+def set_push_token(user_id: str, token: str | None) -> None:
+    sb = get_supabase()
+    sb.table("profiles").update({"expo_push_token": token}).eq("id", user_id).execute()

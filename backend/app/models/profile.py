@@ -16,3 +16,7 @@ class BootstrapRequest(BaseModel):
 
 class HandleUpdate(BaseModel):
     handle: str = Field(pattern=r"^[A-Za-z0-9_]{3,20}$")
+
+
+class PushTokenUpdate(BaseModel):
+    expo_push_token: str | None

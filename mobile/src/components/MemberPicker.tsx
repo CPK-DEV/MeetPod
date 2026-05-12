@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable, StyleSheet, FlatList } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { listMembers, type GroupMember } from '@/api/groups';
 import { listFriends, type FriendSummary } from '@/api/friendships';
 import { useAuthStore } from '@/store/authStore';
@@ -36,21 +36,21 @@ export function MemberPicker({ mode, groupId, selectedIds, onChange }: Props) {
     onChange(next);
   }
 
+  if (items.length === 0) {
+    return <Text style={s.empty}>{mode === 'friends' ? '친구가 없어요' : '다른 멤버가 없어요'}</Text>;
+  }
   return (
-    <FlatList
-      data={items}
-      keyExtractor={(i) => i.id}
-      renderItem={({ item }) => {
+    <View>
+      {items.map((item) => {
         const checked = selectedIds.has(item.id);
         return (
-          <Pressable style={s.row} onPress={() => toggle(item.id)}>
+          <Pressable key={item.id} style={s.row} onPress={() => toggle(item.id)}>
             <Text style={s.box}>{checked ? '☑' : '☐'}</Text>
             <Text style={s.label}>{item.label}</Text>
           </Pressable>
         );
-      }}
-      ListEmptyComponent={<Text style={s.empty}>{mode === 'friends' ? '친구가 없어요' : '다른 멤버가 없어요'}</Text>}
-    />
+      })}
+    </View>
   );
 }
 const s = StyleSheet.create({

@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, Alert, Platform, ScrollView } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { createMeetup, type MeetupCreatePayload, type Place } from '@/api/meetups';
 import { MemberPicker } from '@/components/MemberPicker';
 import { PrimaryButton } from '@/components/PrimaryButton';
+import { usePlacePickStore } from '@/store/placePickStore';
+import { scheduleMeetupReminder } from '@/lib/local_notifications';
 
 const SHARE_OPTIONS = [10, 20, 30, 60] as const;
 const REMINDER_OPTIONS = [10, 30, 60, 120] as const;
@@ -25,12 +27,22 @@ export function MeetupCreateScreen() {
   const [participants, setParticipants] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    if (route.params?.picked) {
-      const p = route.params.picked;
-      setPlace({ name: p.name, lat: p.lat, lng: p.lng, address: p.address, google_id: p.google_id });
+  useFocusEffect(
+    React.useCallback(() => {
+      const p = usePlacePickStore.getState().consume();
+      if (p) {
+        setPlace({ name: p.name, lat: p.lat, lng: p.lng, address: p.address, google_id: p.google_id });
+      }
+    }, []),
+  );
+
+  function onStartsChange(d: Date) {
+    setStarts(d);
+    // 종료가 시작보다 빠르거나 같으면 1시간 뒤로 자동 보정
+    if (ends <= d) {
+      setEnds(new Date(d.getTime() + 60 * 60 * 1000));
     }
-  }, [route.params?.picked]);
+  }
 
   async function submit() {
     if (!title.trim()) return Alert.alert('제목을 입력하세요');
@@ -50,6 +62,10 @@ export function MeetupCreateScreen() {
     setBusy(true);
     try {
       const m = await createMeetup(body);
+      if (reminder !== null) {
+        const notifyAt = new Date(starts.getTime() - reminder * 60_000);
+        await scheduleMeetupReminder(m.id, m.title, reminder, notifyAt);
+      }
       nav.replace('MeetupDetail', { id: m.id });
     } catch (e: any) {
       Alert.alert('생성 실패', e.response?.data?.detail ?? e.message);
@@ -64,7 +80,7 @@ export function MeetupCreateScreen() {
       <Text style={s.label}>시작</Text>
       <Pressable style={s.input} onPress={() => setShowStartsPicker(true)}><Text>{starts.toLocaleString()}</Text></Pressable>
       {showStartsPicker && (
-        <DateTimePicker value={starts} mode="datetime" onChange={(_, d) => { setShowStartsPicker(Platform.OS === 'ios'); if (d) setStarts(d); }} />
+        <DateTimePicker value={starts} mode="datetime" onChange={(_, d) => { setShowStartsPicker(Platform.OS === 'ios'); if (d) onStartsChange(d); }} />
       )}
 
       <Text style={s.label}>종료</Text>

@@ -14,27 +14,64 @@ export interface PlaceDetail {
   lng: number;
 }
 
-export async function autocomplete(input: string, sessionToken: string, language = 'ko'): Promise<PlaceSuggestion[]> {
+const AUTOCOMPLETE_URL = 'https://places.googleapis.com/v1/places:autocomplete';
+const DETAILS_URL = 'https://places.googleapis.com/v1/places';
+
+export interface LocationBias {
+  lat: number;
+  lng: number;
+  radiusMeters?: number;
+}
+
+export async function autocomplete(
+  input: string,
+  sessionToken: string,
+  language = 'ko',
+  bias?: LocationBias | null,
+): Promise<PlaceSuggestion[]> {
   if (!input.trim()) return [];
-  const { data } = await axios.get('https://maps.googleapis.com/maps/api/place/autocomplete/json', {
-    params: { input, key: KEY, sessiontoken: sessionToken, language },
-  });
-  return (data.predictions ?? []).map((p: any) => ({ place_id: p.place_id, description: p.description }));
+  const body: any = { input, languageCode: language, regionCode: 'KR', sessionToken };
+  if (bias) {
+    body.locationBias = {
+      circle: {
+        center: { latitude: bias.lat, longitude: bias.lng },
+        radius: bias.radiusMeters ?? 50000,  // 50km 기본
+      },
+    };
+  }
+  try {
+    const { data } = await axios.post(
+      AUTOCOMPLETE_URL,
+      body,
+      { headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': KEY } },
+    );
+    const suggestions = data.suggestions ?? [];
+    console.log('[places] count=', suggestions.length);
+    return suggestions
+      .filter((s: any) => s.placePrediction)
+      .map((s: any) => ({
+        place_id: s.placePrediction.placeId,
+        description: s.placePrediction.text?.text ?? '',
+      }));
+  } catch (e: any) {
+    console.log('[places] error=', e.message, e.response?.data);
+    return [];
+  }
 }
 
 export async function placeDetails(place_id: string, sessionToken: string, language = 'ko'): Promise<PlaceDetail> {
-  const { data } = await axios.get('https://maps.googleapis.com/maps/api/place/details/json', {
-    params: {
-      place_id, key: KEY, sessiontoken: sessionToken, language,
-      fields: 'place_id,name,formatted_address,geometry/location',
+  const { data } = await axios.get(`${DETAILS_URL}/${place_id}`, {
+    params: { languageCode: language, sessionToken },
+    headers: {
+      'X-Goog-Api-Key': KEY,
+      'X-Goog-FieldMask': 'id,displayName,formattedAddress,location',
     },
   });
-  const r = data.result;
   return {
-    google_id: r.place_id,
-    name: r.name,
-    address: r.formatted_address,
-    lat: r.geometry.location.lat,
-    lng: r.geometry.location.lng,
+    google_id: data.id,
+    name: data.displayName?.text ?? '',
+    address: data.formattedAddress ?? '',
+    lat: data.location?.latitude,
+    lng: data.location?.longitude,
   };
 }

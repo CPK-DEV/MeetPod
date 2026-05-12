@@ -1,22 +1,25 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, FlatList, TextInput, Pressable, StyleSheet, Alert, KeyboardAvoidingView, Platform, Text } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore } from '@/store/chatStore';
+import { usePlacePickStore } from '@/store/placePickStore';
 import {
   createUploadUrl, sendImage, sendPlace, sendText, type Message,
 } from '@/api/chat';
 import { MessageBubble } from '@/components/MessageBubble';
+
+const EMPTY_MESSAGES: Message[] = [];
 
 export function ChatRoomScreen() {
   const nav = useNavigation<any>();
   const route = useRoute<any>();
   const { id: roomId } = route.params;
   const me = useAuthStore((s) => s.profile?.id) ?? '';
-  const messages = useChatStore((s) => s.messages[roomId] ?? []);
+  const messages = useChatStore((s) => s.messages[roomId] ?? EMPTY_MESSAGES);
   const load = useChatStore((s) => s.loadMessages);
   const pushIncoming = useChatStore((s) => s.pushIncoming);
   const [text, setText] = useState('');
@@ -41,15 +44,14 @@ export function ChatRoomScreen() {
     setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
   }, [messages.length]);
 
-  // place 메시지: PlacePicker에서 돌아올 때 처리
-  useEffect(() => {
-    const picked = route.params?.picked;
-    if (picked) {
-      sendPlace(roomId, { name: picked.name, lat: picked.lat, lng: picked.lng, address: picked.address, google_id: picked.google_id })
+  // place 메시지: PlacePicker에서 돌아올 때 store 소비
+  useFocusEffect(useCallback(() => {
+    const p = usePlacePickStore.getState().consume();
+    if (p) {
+      sendPlace(roomId, { name: p.name, lat: p.lat, lng: p.lng, address: p.address, google_id: p.google_id })
         .catch((e) => Alert.alert('전송 실패', e.message));
-      nav.setParams({ picked: undefined });
     }
-  }, [route.params?.picked]);
+  }, [roomId]));
 
   async function send() {
     const t = text.trim();
@@ -69,13 +71,19 @@ export function ChatRoomScreen() {
     if (result.canceled) return;
     const asset = result.assets[0];
     const ext = (asset.fileName?.split('.').pop() ?? 'jpg').toLowerCase();
+    const objectKey = `${roomId}/${Date.now()}.${ext}`;
+    const contentType = asset.mimeType ?? `image/${ext}`;
     try {
-      const u = await createUploadUrl(roomId, ext);
-      const blob = await (await fetch(asset.uri)).blob();
-      await axios.put(u.signed_url, blob, { headers: { 'Content-Type': asset.mimeType ?? `image/${ext}` } });
-      await sendImage(roomId, u.public_path);
+      // RN: fetch + arrayBuffer 패턴이 blob()보다 안정적
+      const ab = await (await fetch(asset.uri)).arrayBuffer();
+      const { error } = await supabase.storage.from('chat-images').upload(objectKey, ab, {
+        contentType, upsert: false,
+      });
+      if (error) throw error;
+      await sendImage(roomId, `chat-images/${objectKey}`);
     } catch (e: any) {
-      Alert.alert('업로드 실패', e.message);
+      console.log('[upload] failed', e);
+      Alert.alert('업로드 실패', e.message ?? String(e));
     }
   }
 

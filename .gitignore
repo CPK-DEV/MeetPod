@@ -3,3 +3,9 @@
 !.env.*.example
 supabase/.branches/
 supabase/.temp/
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+.expo/
+*.tsbuildinfo

@@ -2,14 +2,11 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, FlatList, TextInput, Pressable, StyleSheet, Alert, KeyboardAvoidingView, Platform, Text } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import axios from 'axios';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { useChatStore } from '@/store/chatStore';
 import { usePlacePickStore } from '@/store/placePickStore';
-import {
-  createUploadUrl, sendImage, sendPlace, sendText, type Message,
-} from '@/api/chat';
+import { sendImage, sendPlace, sendText, type Message } from '@/api/chat';
 import { MessageBubble } from '@/components/MessageBubble';
 
 const EMPTY_MESSAGES: Message[] = [];

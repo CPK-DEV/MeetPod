@@ -46,7 +46,6 @@ export async function autocomplete(
       { headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': KEY } },
     );
     const suggestions = data.suggestions ?? [];
-    console.log('[places] count=', suggestions.length);
     return suggestions
       .filter((s: any) => s.placePrediction)
       .map((s: any) => ({
@@ -54,7 +53,6 @@ export async function autocomplete(
         description: s.placePrediction.text?.text ?? '',
       }));
   } catch (e: any) {
-    console.log('[places] error=', e.message, e.response?.data);
     return [];
   }
 }

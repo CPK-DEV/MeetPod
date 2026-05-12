@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { cancelMeetup, getMeetup, listParticipants, type Meetup, type Participant } from '@/api/meetups';
+import { listRooms } from '@/api/chat';
 import { PlaceCard } from '@/components/PlaceCard';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { useAuthStore } from '@/store/authStore';
@@ -12,10 +13,15 @@ export function MeetupDetailScreen() {
   const me = useAuthStore((s) => s.profile?.id);
   const [m, setM] = useState<Meetup | null>(null);
   const [parts, setParts] = useState<Participant[]>([]);
+  const [roomId, setRoomId] = useState<string | null>(null);
 
   useFocusEffect(useCallback(() => {
     getMeetup(id).then(setM);
     listParticipants(id).then(setParts);
+    listRooms().then((rooms) => {
+      const r = rooms.find((x) => x.kind === 'meetup' && x.ref_id === id);
+      setRoomId(r?.id ?? null);
+    });
   }, [id]));
 
   if (!m) return <View style={s.root}><Text>로딩중...</Text></View>;
@@ -35,6 +41,9 @@ export function MeetupDetailScreen() {
       {parts.map((p) => <Text key={p.user_id} style={s.part}>{p.user_id}{p.user_id === m.creator_id ? ' · 주최' : ''}</Text>)}
 
       <View style={{ height: 16 }} />
+      {roomId && (
+        <PrimaryButton label="약속 채팅 열기" onPress={() => nav.navigate('Chats', { screen: 'ChatRoom', params: { id: roomId, kind: 'meetup' } })} />
+      )}
       {m.status === 'active' || m.status === 'scheduled' ? (
         <PrimaryButton label="실시간 위치 보기" onPress={() => nav.navigate('MeetupMap', { id: m.id })} />
       ) : null}

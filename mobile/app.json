@@ -19,7 +19,10 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "약속 시간 동안 친구와 위치를 공유하기 위해 사용합니다.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "약속 시간 동안 백그라운드에서도 위치를 공유하기 위해 사용합니다.",
-        "UIBackgroundModes": ["location", "fetch"]
+        "UIBackgroundModes": [
+          "location",
+          "fetch"
+        ]
       }
     },
     "android": {
@@ -42,8 +45,20 @@
     },
     "plugins": [
       "expo-secure-store",
-      ["expo-location", { "locationAlwaysAndWhenInUsePermission": "약속 시간 동안 백그라운드에서도 위치를 공유합니다." }],
-      ["expo-notifications", { "icon": "./assets/icon.png", "color": "#111111" }]
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "약속 시간 동안 백그라운드에서도 위치를 공유합니다."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#111111"
+        }
+      ],
+      "@react-native-community/datetimepicker"
     ]
   }
 }

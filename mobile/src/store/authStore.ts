@@ -46,6 +46,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const { registerPush } = await import('@/lib/push_registrar');
         await registerPush();
       } catch {}
+      try {
+        const { syncAllLocalReminders } = await import('@/lib/local_notifications');
+        await syncAllLocalReminders();
+      } catch {}
     }
     set({ profile: me, status: me.handle ? 'ready' : 'needsHandle' });
   },

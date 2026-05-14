@@ -1,9 +1,13 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { Text, Pressable, StyleSheet, View, ScrollView } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { getGroup, type Group } from '@/api/groups';
 import { listRooms } from '@/api/chat';
-import { PrimaryButton } from '@/components/PrimaryButton';
+import { ScreenContainer, TABBAR_RESERVED_HEIGHT } from '@/ui/ScreenContainer';
+import { Header } from '@/ui/Header';
+import { Card } from '@/ui/Card';
+import { Button } from '@/ui/Button';
+import { colors, fontFamily, fontSize, spacing } from '@/theme';
 
 export function GroupDetailScreen() {
   const route = useRoute<any>();
@@ -20,32 +24,46 @@ export function GroupDetailScreen() {
     });
   }, [id]));
 
-  if (!g) return <View style={s.root}><Text>로딩중...</Text></View>;
+  if (!g) return (
+    <ScreenContainer hasTabBar header={<Header title="" back />}>
+      <Text style={s.loading}>로딩중…</Text>
+    </ScreenContainer>
+  );
+
   return (
-    <View style={s.root}>
-      <Text style={s.name}>{g.name}</Text>
-      {g.description ? <Text style={s.sub}>{g.description}</Text> : null}
-      <View style={{ height: 24 }} />
-      <Pressable style={s.row} onPress={() => nav.navigate('GroupMembers', { id: g.id })}>
-        <Text style={s.rowLabel}>멤버</Text>
-      </Pressable>
-      <Pressable style={s.row} onPress={() => nav.navigate('GroupInvite', { id: g.id })}>
-        <Text style={s.rowLabel}>초대 링크 만들기</Text>
-      </Pressable>
-      {roomId && (
-        <Pressable style={s.row} onPress={() => nav.navigate('Chats', { screen: 'ChatRoom', params: { id: roomId, kind: 'group' } })}>
-          <Text style={s.rowLabel}>그룹 채팅 열기</Text>
-        </Pressable>
-      )}
-      <View style={{ height: 24 }} />
-      <PrimaryButton label="이 그룹으로 약속 만들기" onPress={() => nav.navigate('Meetups', { screen: 'MeetupCreate', params: { group_id: g.id } })} />
-    </View>
+    <ScreenContainer hasTabBar header={<Header title={g.name} back />}>
+      <ScrollView contentContainerStyle={{ paddingTop: spacing(2), paddingBottom: TABBAR_RESERVED_HEIGHT }}>
+        {g.description ? (
+          <Card><Text style={s.desc}>{g.description}</Text></Card>
+        ) : null}
+
+        <Card>
+          <Pressable style={s.row} onPress={() => nav.navigate('GroupMembers', { id: g.id })}><Text style={s.rowLabel}>멤버</Text><Text style={s.chev}>›</Text></Pressable>
+          <View style={s.divider} />
+          <Pressable style={s.row} onPress={() => nav.navigate('GroupInvite', { id: g.id })}><Text style={s.rowLabel}>초대 링크 만들기</Text><Text style={s.chev}>›</Text></Pressable>
+          {roomId && (
+            <>
+              <View style={s.divider} />
+              <Pressable style={s.row} onPress={() => nav.navigate('Chats', { screen: 'ChatRoom', params: { id: roomId, kind: 'group' } })}>
+                <Text style={s.rowLabel}>그룹 채팅 열기</Text><Text style={s.chev}>›</Text>
+              </Pressable>
+            </>
+          )}
+        </Card>
+
+        <View style={{ paddingHorizontal: spacing(3), marginTop: spacing(2) }}>
+          <Button label="이 그룹으로 약속 만들기" onPress={() => nav.navigate('Meetups', { screen: 'MeetupCreate', params: { group_id: g.id } })} />
+        </View>
+      </ScrollView>
+    </ScreenContainer>
   );
 }
+
 const s = StyleSheet.create({
-  root: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  name: { fontSize: 24, fontWeight: '700' },
-  sub: { color: '#666', marginTop: 8 },
-  row: { paddingVertical: 16, borderBottomWidth: 1, borderColor: '#eee' },
-  rowLabel: { fontSize: 16 },
+  loading: { color: colors.inkInverse, padding: spacing(4) },
+  desc: { color: colors.muted, fontFamily: fontFamily.regular, fontSize: fontSize.base },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing(2.5) },
+  rowLabel: { color: colors.ink, fontFamily: fontFamily.medium, fontSize: fontSize.md },
+  chev: { color: colors.mutedLight, fontSize: fontSize.lg },
+  divider: { height: 1, backgroundColor: colors.border },
 });

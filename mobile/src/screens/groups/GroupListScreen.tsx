@@ -1,8 +1,14 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, FlatList, RefreshControl, Pressable, StyleSheet } from 'react-native';
+import { FlatList, RefreshControl, Text, StyleSheet } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { listGroups, type Group } from '@/api/groups';
-import { PrimaryButton } from '@/components/PrimaryButton';
+import { ScreenContainer, TABBAR_RESERVED_HEIGHT } from '@/ui/ScreenContainer';
+import { Header } from '@/ui/Header';
+import { HeaderButton } from '@/ui/HeaderButton';
+import { Card } from '@/ui/Card';
+import { EmptyState } from '@/ui/EmptyState';
+import { Button } from '@/ui/Button';
+import { colors, fontFamily, fontSize, spacing } from '@/theme';
 
 export function GroupListScreen() {
   const nav = useNavigation<any>();
@@ -16,31 +22,35 @@ export function GroupListScreen() {
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
   return (
-    <View style={s.root}>
-      <FlatList
-        data={items}
-        keyExtractor={(g) => g.id}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} />}
-        renderItem={({ item }) => (
-          <Pressable style={s.row} onPress={() => nav.navigate('GroupDetail', { id: item.id })}>
-            <Text style={s.name}>{item.name}</Text>
-            {item.description ? <Text style={s.sub}>{item.description}</Text> : null}
-          </Pressable>
-        )}
-        ListEmptyComponent={<Text style={s.empty}>아직 그룹이 없어요</Text>}
-      />
-      <View style={s.footer}>
-        <PrimaryButton label="그룹 만들기" onPress={() => nav.navigate('GroupCreate')} />
-      </View>
-    </View>
+    <ScreenContainer
+      hasTabBar
+      header={<Header title="그룹" subtitle={`${items.length}개`} action={<HeaderButton icon="+" onPress={() => nav.navigate('GroupCreate')} />} />}
+    >
+      {items.length === 0 ? (
+        <EmptyState
+          title="그룹이 없어요"
+          description="친구와 자주 만나는 모임을 그룹으로 만들어보세요."
+          action={<Button label="그룹 만들기" onPress={() => nav.navigate('GroupCreate')} />}
+        />
+      ) : (
+        <FlatList
+          contentContainerStyle={{ paddingTop: spacing(2), paddingBottom: TABBAR_RESERVED_HEIGHT }}
+          data={items}
+          keyExtractor={(g) => g.id}
+          refreshControl={<RefreshControl tintColor={colors.inkInverse} refreshing={refreshing} onRefresh={load} />}
+          renderItem={({ item }) => (
+            <Card variant="row" onPress={() => nav.navigate('GroupDetail', { id: item.id })}>
+              <Text style={s.name}>{item.name}</Text>
+              {item.description ? <Text style={s.sub}>{item.description}</Text> : null}
+            </Card>
+          )}
+        />
+      )}
+    </ScreenContainer>
   );
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#fff' },
-  row: { padding: 16, borderBottomWidth: 1, borderColor: '#eee' },
-  name: { fontSize: 18, fontWeight: '600' },
-  sub: { color: '#666', marginTop: 4 },
-  empty: { textAlign: 'center', marginTop: 64, color: '#999' },
-  footer: { padding: 16 },
+  name: { color: colors.ink, fontFamily: fontFamily.bold, fontSize: fontSize.md },
+  sub: { color: colors.muted, fontFamily: fontFamily.regular, fontSize: fontSize.sm, marginTop: spacing(1) },
 });

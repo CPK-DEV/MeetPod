@@ -3,9 +3,14 @@ import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { cancelMeetup, getMeetup, listParticipants, type Meetup, type Participant } from '@/api/meetups';
 import { listRooms } from '@/api/chat';
+import { ScreenContainer, TABBAR_RESERVED_HEIGHT } from '@/ui/ScreenContainer';
+import { Header } from '@/ui/Header';
+import { Card } from '@/ui/Card';
+import { Button } from '@/ui/Button';
+import { Avatar } from '@/ui/Avatar';
 import { PlaceCard } from '@/components/PlaceCard';
-import { PrimaryButton } from '@/components/PrimaryButton';
 import { useAuthStore } from '@/store/authStore';
+import { colors, fontFamily, fontSize, spacing } from '@/theme';
 
 export function MeetupDetailScreen() {
   const { id } = (useRoute<any>()).params;
@@ -24,45 +29,60 @@ export function MeetupDetailScreen() {
     });
   }, [id]));
 
-  if (!m) return <View style={s.root}><Text>로딩중...</Text></View>;
+  if (!m) return (
+    <ScreenContainer hasTabBar header={<Header title="" back />}>
+      <View style={{ padding: spacing(4) }}><Text style={{ color: colors.inkInverse }}>로딩중…</Text></View>
+    </ScreenContainer>
+  );
+
   const isCreator = m.creator_id === me;
   const editable = m.status === 'scheduled' && isCreator;
 
   return (
-    <ScrollView style={s.root} contentContainerStyle={{ padding: 16 }}>
-      <Text style={s.title}>{m.title}</Text>
-      <Text style={s.meta}>상태: {m.status}</Text>
-      <Text style={s.meta}>{new Date(m.starts_at).toLocaleString()} ~ {new Date(m.ends_at).toLocaleString()}</Text>
-      <Text style={s.meta}>위치 공유: {m.location_share_minutes_before}분 전 시작</Text>
+    <ScreenContainer hasTabBar header={<Header title={m.title} back />}>
+      <ScrollView contentContainerStyle={{ paddingTop: spacing(2), paddingBottom: TABBAR_RESERVED_HEIGHT }}>
+        <Card variant="hero">
+          <Text style={s.meta}>상태: {m.status}</Text>
+          <Text style={s.meta}>{new Date(m.starts_at).toLocaleString()} ~ {new Date(m.ends_at).toLocaleString()}</Text>
+          <Text style={s.meta}>위치 공유: {m.location_share_minutes_before}분 전 시작</Text>
+          <View style={s.avatars}>
+            {parts.map((p) => (
+              <View key={p.user_id} style={{ marginRight: spacing(1.5) }}>
+                <Avatar userId={p.user_id} name={p.user_id} size={32} />
+              </View>
+            ))}
+          </View>
+        </Card>
 
-      <PlaceCard name={m.place_name} lat={m.place_lat} lng={m.place_lng} address={m.place_address ?? undefined} />
+        <PlaceCard name={m.place_name} lat={m.place_lat} lng={m.place_lng} address={m.place_address ?? undefined} />
 
-      <Text style={s.section}>참여자 ({parts.length})</Text>
-      {parts.map((p) => <Text key={p.user_id} style={s.part}>{p.user_id}{p.user_id === m.creator_id ? ' · 주최' : ''}</Text>)}
-
-      <View style={{ height: 16 }} />
-      {roomId && (
-        <PrimaryButton label="약속 채팅 열기" onPress={() => nav.navigate('Chats', { screen: 'ChatRoom', params: { id: roomId, kind: 'meetup' } })} />
-      )}
-      {m.status === 'active' || m.status === 'scheduled' ? (
-        <PrimaryButton label="실시간 위치 보기" onPress={() => nav.navigate('MeetupMap', { id: m.id })} />
-      ) : null}
-      {editable ? (
-        <PrimaryButton
-          label="약속 취소"
-          onPress={() => Alert.alert('취소', '정말 취소할까요?', [
-            { text: '취소', style: 'cancel' },
-            { text: '확인', style: 'destructive', onPress: async () => { const updated = await cancelMeetup(id); setM(updated); } },
-          ])}
-        />
-      ) : null}
-    </ScrollView>
+        <View style={{ paddingHorizontal: spacing(3), marginTop: spacing(2) }}>
+          {roomId && (
+            <>
+              <Button label="약속 채팅 열기" variant="primary" onPress={() => nav.navigate('Chats', { screen: 'ChatRoom', params: { id: roomId, kind: 'meetup' } })} />
+              <View style={{ height: spacing(2) }} />
+            </>
+          )}
+          {(m.status === 'active' || m.status === 'scheduled') && (
+            <>
+              <Button label="실시간 위치 보기" variant="ghostOnOrange" onPress={() => nav.navigate('MeetupMap', { id: m.id })} />
+              <View style={{ height: spacing(2) }} />
+            </>
+          )}
+          {editable && (
+            <Button label="약속 취소" variant="dangerOnSurface" onPress={() =>
+              Alert.alert('취소', '정말 취소할까요?', [
+                { text: '돌아가기', style: 'cancel' },
+                { text: '확인', style: 'destructive', onPress: async () => { const updated = await cancelMeetup(id); setM(updated); } },
+              ])} />
+          )}
+        </View>
+      </ScrollView>
+    </ScreenContainer>
   );
 }
+
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#fff' },
-  title: { fontSize: 22, fontWeight: '700' },
-  meta: { color: '#555', marginTop: 4 },
-  section: { fontSize: 16, fontWeight: '600', marginTop: 16, marginBottom: 8 },
-  part: { paddingVertical: 4 },
+  meta: { color: colors.muted, fontFamily: fontFamily.regular, fontSize: fontSize.base, marginTop: spacing(1) },
+  avatars: { flexDirection: 'row', marginTop: spacing(3) },
 });

@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/store/authStore';
-import { PrimaryButton } from '@/components/PrimaryButton';
+import { Button } from '@/ui/Button';
+import { Input } from '@/ui/Input';
+import { colors, fontFamily, fontSize, spacing } from '@/theme';
 
 const HANDLE_RE = /^[A-Za-z0-9_]{3,20}$/;
 
@@ -16,42 +19,41 @@ export function OnboardingHandleScreen() {
       return;
     }
     setBusy(true);
-    try {
-      await setHandleAction(handle);
-    } catch (e: any) {
+    try { await setHandleAction(handle); }
+    catch (e: any) {
       const msg = e.response?.data?.detail ?? e.message;
       Alert.alert('핸들 설정 실패', String(msg));
-    } finally {
-      setBusy(false);
-    }
+    } finally { setBusy(false); }
   }
 
   return (
-    <View style={s.root}>
-      <Text style={s.title}>핸들을 정해주세요</Text>
-      <Text style={s.sub}>친구가 회원님을 식별하는 ID입니다. 이후 변경할 수 없어요.</Text>
-      <View style={s.row}>
-        <Text style={s.at}>@</Text>
-        <TextInput
-          value={handle}
-          onChangeText={setHandle}
-          autoCapitalize="none"
-          autoCorrect={false}
-          placeholder="harry"
-          style={s.input}
-          maxLength={20}
-        />
+    <SafeAreaView style={s.root}>
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <Text style={s.title}>핸들을 정해주세요</Text>
+        <Text style={s.desc}>친구가 회원님을 식별하는 ID입니다. 이후 변경할 수 없어요.</Text>
+        <View style={s.atWrap}>
+          <Text style={s.at}>@</Text>
+          <Input
+            value={handle}
+            onChangeText={setHandle}
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholder="harry"
+            maxLength={20}
+            style={s.input}
+          />
+        </View>
       </View>
-      <PrimaryButton label="시작하기" onPress={submit} loading={busy} />
-    </View>
+      <Button label="시작하기" onPress={submit} loading={busy} />
+    </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, padding: 24, backgroundColor: '#fff', justifyContent: 'center' },
-  title: { fontSize: 28, fontWeight: '800' },
-  sub: { fontSize: 14, color: '#666', marginTop: 8, marginBottom: 32 },
-  row: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderColor: '#ddd', marginBottom: 24 },
-  at: { fontSize: 22, color: '#888', marginRight: 4 },
-  input: { flex: 1, fontSize: 22, paddingVertical: 12 },
+  root: { flex: 1, backgroundColor: colors.brandPrimary, padding: spacing(6) },
+  title: { color: colors.inkInverse, fontFamily: fontFamily.black, fontSize: fontSize['3xl'] },
+  desc: { color: 'rgba(255,255,255,0.85)', fontFamily: fontFamily.regular, fontSize: fontSize.md, marginTop: spacing(2), marginBottom: spacing(8) },
+  atWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 4, paddingLeft: spacing(3) },
+  at: { color: colors.muted, fontFamily: fontFamily.regular, fontSize: fontSize['2xl'] },
+  input: { flex: 1, borderWidth: 0, fontSize: fontSize['2xl'], paddingVertical: spacing(3) },
 });

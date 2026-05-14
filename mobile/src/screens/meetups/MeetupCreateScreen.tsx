@@ -1,12 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, Alert, Platform, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Pressable, StyleSheet, Alert, Platform, ScrollView } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { createMeetup, type MeetupCreatePayload, type Place } from '@/api/meetups';
 import { MemberPicker } from '@/components/MemberPicker';
-import { PrimaryButton } from '@/components/PrimaryButton';
+import { ScreenContainer, TABBAR_RESERVED_HEIGHT } from '@/ui/ScreenContainer';
+import { Header } from '@/ui/Header';
+import { Card } from '@/ui/Card';
+import { Button } from '@/ui/Button';
+import { Input } from '@/ui/Input';
 import { usePlacePickStore } from '@/store/placePickStore';
 import { scheduleMeetupReminder } from '@/lib/local_notifications';
+import { colors, fontFamily, fontSize, radius, spacing } from '@/theme';
 
 const SHARE_OPTIONS = [10, 20, 30, 60] as const;
 const REMINDER_OPTIONS = [10, 30, 60, 120] as const;
@@ -27,21 +32,14 @@ export function MeetupCreateScreen() {
   const [participants, setParticipants] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      const p = usePlacePickStore.getState().consume();
-      if (p) {
-        setPlace({ name: p.name, lat: p.lat, lng: p.lng, address: p.address, google_id: p.google_id });
-      }
-    }, []),
-  );
+  useFocusEffect(React.useCallback(() => {
+    const p = usePlacePickStore.getState().consume();
+    if (p) setPlace({ name: p.name, lat: p.lat, lng: p.lng, address: p.address, google_id: p.google_id });
+  }, []));
 
   function onStartsChange(d: Date) {
     setStarts(d);
-    // 종료가 시작보다 빠르거나 같으면 1시간 뒤로 자동 보정
-    if (ends <= d) {
-      setEnds(new Date(d.getTime() + 60 * 60 * 1000));
-    }
+    if (ends <= d) setEnds(new Date(d.getTime() + 60 * 60 * 1000));
   }
 
   async function submit() {
@@ -73,69 +71,88 @@ export function MeetupCreateScreen() {
   }
 
   return (
-    <ScrollView style={s.root} contentContainerStyle={{ padding: 16 }}>
-      <Text style={s.label}>제목</Text>
-      <TextInput style={s.input} value={title} onChangeText={setTitle} maxLength={120} />
+    <ScreenContainer hasTabBar header={<Header title="새 약속" back />}>
+      <ScrollView contentContainerStyle={{ paddingTop: spacing(2), paddingBottom: TABBAR_RESERVED_HEIGHT }}>
+        <Card>
+          <Text style={s.label}>제목</Text>
+          <Input value={title} onChangeText={setTitle} maxLength={120} />
+        </Card>
 
-      <Text style={s.label}>시작</Text>
-      <Pressable style={s.input} onPress={() => setShowStartsPicker(true)}><Text>{starts.toLocaleString()}</Text></Pressable>
-      {showStartsPicker && (
-        <DateTimePicker value={starts} mode="datetime" onChange={(_, d) => { setShowStartsPicker(Platform.OS === 'ios'); if (d) onStartsChange(d); }} />
-      )}
-
-      <Text style={s.label}>종료</Text>
-      <Pressable style={s.input} onPress={() => setShowEndsPicker(true)}><Text>{ends.toLocaleString()}</Text></Pressable>
-      {showEndsPicker && (
-        <DateTimePicker value={ends} mode="datetime" onChange={(_, d) => { setShowEndsPicker(Platform.OS === 'ios'); if (d) setEnds(d); }} />
-      )}
-
-      <Text style={s.label}>장소</Text>
-      <Pressable style={s.input} onPress={() => nav.navigate('PlacePicker')}>
-        <Text>{place ? place.name : '장소 선택'}</Text>
-      </Pressable>
-
-      <Text style={s.label}>위치 공유 시작 (분 전)</Text>
-      <View style={s.chips}>
-        {SHARE_OPTIONS.map((n) => (
-          <Pressable key={n} style={[s.chip, share === n && s.chipOn]} onPress={() => setShare(n)}>
-            <Text style={share === n ? s.chipOnText : s.chipText}>{n}분</Text>
+        <Card>
+          <Text style={s.label}>시작</Text>
+          <Pressable style={s.pickerRow} onPress={() => setShowStartsPicker(true)}>
+            <Text style={s.pickerText}>{starts.toLocaleString()}</Text>
           </Pressable>
-        ))}
-      </View>
+          {showStartsPicker && (
+            <DateTimePicker value={starts} mode="datetime" onChange={(_, d) => { setShowStartsPicker(Platform.OS === 'ios'); if (d) onStartsChange(d); }} />
+          )}
 
-      <Text style={s.label}>내 알림 (분 전, 선택)</Text>
-      <View style={s.chips}>
-        <Pressable style={[s.chip, reminder === null && s.chipOn]} onPress={() => setReminder(null)}>
-          <Text style={reminder === null ? s.chipOnText : s.chipText}>없음</Text>
-        </Pressable>
-        {REMINDER_OPTIONS.map((n) => (
-          <Pressable key={n} style={[s.chip, reminder === n && s.chipOn]} onPress={() => setReminder(n)}>
-            <Text style={reminder === n ? s.chipOnText : s.chipText}>{n}분</Text>
+          <Text style={[s.label, { marginTop: spacing(3) }]}>종료</Text>
+          <Pressable style={s.pickerRow} onPress={() => setShowEndsPicker(true)}>
+            <Text style={s.pickerText}>{ends.toLocaleString()}</Text>
           </Pressable>
-        ))}
-      </View>
+          {showEndsPicker && (
+            <DateTimePicker value={ends} mode="datetime" onChange={(_, d) => { setShowEndsPicker(Platform.OS === 'ios'); if (d) setEnds(d); }} />
+          )}
+        </Card>
 
-      <Text style={s.label}>{initialGroupId ? '그룹 멤버' : '친구'}</Text>
-      <View style={{ height: 200 }}>
-        <MemberPicker
-          mode={initialGroupId ? 'group' : 'friends'}
-          groupId={initialGroupId ?? undefined}
-          selectedIds={participants}
-          onChange={setParticipants}
-        />
-      </View>
+        <Card>
+          <Text style={s.label}>장소</Text>
+          <Pressable style={s.pickerRow} onPress={() => nav.navigate('PlacePicker')}>
+            <Text style={s.pickerText}>{place ? place.name : '장소 선택'}</Text>
+          </Pressable>
+        </Card>
 
-      <PrimaryButton label="만들기" onPress={submit} loading={busy} />
-    </ScrollView>
+        <Card>
+          <Text style={s.label}>위치 공유 시작 (분 전)</Text>
+          <View style={s.chips}>
+            {SHARE_OPTIONS.map((n) => (
+              <Pressable key={n} onPress={() => setShare(n)} style={[s.chip, share === n && s.chipOn]}>
+                <Text style={share === n ? s.chipOnText : s.chipText}>{n}분</Text>
+              </Pressable>
+            ))}
+          </View>
+        </Card>
+
+        <Card>
+          <Text style={s.label}>내 알림 (분 전, 선택)</Text>
+          <View style={s.chips}>
+            <Pressable onPress={() => setReminder(null)} style={[s.chip, reminder === null && s.chipOn]}>
+              <Text style={reminder === null ? s.chipOnText : s.chipText}>없음</Text>
+            </Pressable>
+            {REMINDER_OPTIONS.map((n) => (
+              <Pressable key={n} onPress={() => setReminder(n)} style={[s.chip, reminder === n && s.chipOn]}>
+                <Text style={reminder === n ? s.chipOnText : s.chipText}>{n}분</Text>
+              </Pressable>
+            ))}
+          </View>
+        </Card>
+
+        <Card>
+          <Text style={s.label}>{initialGroupId ? '그룹 멤버' : '친구'}</Text>
+          <MemberPicker
+            mode={initialGroupId ? 'group' : 'friends'}
+            groupId={initialGroupId ?? undefined}
+            selectedIds={participants}
+            onChange={setParticipants}
+          />
+        </Card>
+
+        <View style={{ paddingHorizontal: spacing(3), marginTop: spacing(2) }}>
+          <Button label="만들기" onPress={submit} loading={busy} />
+        </View>
+      </ScrollView>
+    </ScreenContainer>
   );
 }
+
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#fff' },
-  label: { fontSize: 14, color: '#444', marginTop: 12, marginBottom: 4 },
-  input: { borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 12, fontSize: 16 },
+  label: { color: colors.muted, fontFamily: fontFamily.medium, fontSize: fontSize.sm, marginBottom: spacing(1.5) },
+  pickerRow: { paddingVertical: spacing(2), borderWidth: 1, borderColor: colors.border, borderRadius: radius.xs, paddingHorizontal: spacing(3) },
+  pickerText: { color: colors.ink, fontFamily: fontFamily.regular, fontSize: fontSize.md },
   chips: { flexDirection: 'row', flexWrap: 'wrap' },
-  chip: { borderWidth: 1, borderColor: '#ccc', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8, marginVertical: 4 },
-  chipOn: { backgroundColor: '#111', borderColor: '#111' },
-  chipText: { color: '#333' },
-  chipOnText: { color: '#fff' },
+  chip: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.xs, paddingHorizontal: spacing(3), paddingVertical: spacing(1.5), marginRight: spacing(2), marginBottom: spacing(1.5) },
+  chipOn: { backgroundColor: colors.surfaceDark, borderColor: colors.surfaceDark },
+  chipText: { color: colors.ink, fontFamily: fontFamily.medium, fontSize: fontSize.sm },
+  chipOnText: { color: colors.brandSecondary, fontFamily: fontFamily.bold, fontSize: fontSize.sm },
 });

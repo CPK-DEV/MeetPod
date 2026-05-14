@@ -1,8 +1,14 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, FlatList, Pressable, Alert, StyleSheet } from 'react-native';
+import { FlatList, Pressable, Text, View, Alert, StyleSheet } from 'react-native';
 import { useFocusEffect, useRoute } from '@react-navigation/native';
 import { listMembers, kickMember, setMemberRole, type GroupMember } from '@/api/groups';
 import { useAuthStore } from '@/store/authStore';
+import { ScreenContainer, TABBAR_RESERVED_HEIGHT } from '@/ui/ScreenContainer';
+import { Header } from '@/ui/Header';
+import { Card } from '@/ui/Card';
+import { Avatar } from '@/ui/Avatar';
+import { Badge } from '@/ui/Badge';
+import { colors, fontFamily, fontSize, spacing } from '@/theme';
 
 export function GroupMembersScreen() {
   const { id } = (useRoute<any>()).params;
@@ -27,21 +33,28 @@ export function GroupMembersScreen() {
   }
 
   return (
-    <FlatList
-      style={{ backgroundColor: '#fff' }}
-      data={items}
-      keyExtractor={(m) => m.user_id}
-      renderItem={({ item }) => (
-        <Pressable style={s.row} onPress={() => actions(item)}>
-          <Text style={s.uid}>{item.user_id}</Text>
-          <Text style={s.role}>{item.role}</Text>
-        </Pressable>
-      )}
-    />
+    <ScreenContainer hasTabBar header={<Header title="멤버" subtitle={`${items.length}명`} back />}>
+      <FlatList
+        data={items}
+        keyExtractor={(m) => m.user_id}
+        contentContainerStyle={{ paddingTop: spacing(2), paddingBottom: TABBAR_RESERVED_HEIGHT }}
+        renderItem={({ item }) => (
+          <Card variant="row" onPress={() => actions(item)}>
+            <View style={s.row}>
+              <Avatar userId={item.user_id} name={item.user_id} size={36} />
+              <View style={{ flex: 1, marginLeft: spacing(3) }}>
+                <Text style={s.id}>{item.user_id}</Text>
+              </View>
+              <Badge tone={item.role === 'owner' ? 'today' : 'neutral'}>{item.role}</Badge>
+            </View>
+          </Card>
+        )}
+      />
+    </ScreenContainer>
   );
 }
+
 const s = StyleSheet.create({
-  row: { padding: 14, borderBottomWidth: 1, borderColor: '#eee', flexDirection: 'row', justifyContent: 'space-between' },
-  uid: { fontSize: 14, color: '#222' },
-  role: { fontSize: 14, color: '#666' },
+  row: { flexDirection: 'row', alignItems: 'center' },
+  id: { color: colors.ink, fontFamily: fontFamily.medium, fontSize: fontSize.sm },
 });

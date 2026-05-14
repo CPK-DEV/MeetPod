@@ -1,9 +1,9 @@
 export const fontFamily = {
-  regular:  'Pretendard_400Regular',
-  medium:   'Pretendard_500Medium',
-  semibold: 'Pretendard_600SemiBold',
-  bold:     'Pretendard_700Bold',
-  black:    'Pretendard_800ExtraBold',
+  regular:  'NotoSansKR_400Regular',
+  medium:   'NotoSansKR_500Medium',
+  semibold: 'NotoSansKR_600SemiBold',
+  bold:     'NotoSansKR_700Bold',
+  black:    'NotoSansKR_800ExtraBold',
 } as const;
 
 export const fontSize = {

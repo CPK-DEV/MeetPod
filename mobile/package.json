@@ -21,6 +21,7 @@
     ]
   },
   "dependencies": {
+    "@expo-google-fonts/noto-sans-kr": "^0.4.3",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
     "@react-navigation/bottom-tabs": "^7.15.13",
@@ -32,11 +33,13 @@
     "expo-clipboard": "~8.0.8",
     "expo-crypto": "~15.0.9",
     "expo-device": "~8.0.10",
+    "expo-font": "^55.0.7",
     "expo-image-picker": "~17.0.11",
     "expo-linking": "~8.0.12",
     "expo-location": "~19.0.8",
     "expo-notifications": "~0.32.17",
     "expo-secure-store": "~15.0.8",
+    "expo-splash-screen": "^55.0.21",
     "expo-status-bar": "~3.0.9",
     "expo-task-manager": "~14.0.9",
     "expo-web-browser": "~15.0.11",

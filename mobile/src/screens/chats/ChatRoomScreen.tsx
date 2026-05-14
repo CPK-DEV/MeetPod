@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, FlatList, TextInput, Pressable, StyleSheet, Alert, KeyboardAvoidingView, Platform, Text } from 'react-native';
+import { View, FlatList, Pressable, StyleSheet, Alert, KeyboardAvoidingView, Platform, Text } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '@/lib/supabase';
@@ -8,6 +8,10 @@ import { useChatStore } from '@/store/chatStore';
 import { usePlacePickStore } from '@/store/placePickStore';
 import { sendImage, sendPlace, sendText, type Message } from '@/api/chat';
 import { MessageBubble } from '@/components/MessageBubble';
+import { ScreenContainer } from '@/ui/ScreenContainer';
+import { Header } from '@/ui/Header';
+import { Input } from '@/ui/Input';
+import { colors, fontFamily, fontSize, radius, spacing } from '@/theme';
 
 const EMPTY_MESSAGES: Message[] = [];
 
@@ -24,7 +28,6 @@ export function ChatRoomScreen() {
 
   useEffect(() => { load(roomId); }, [roomId]);
 
-  // Realtime 구독
   useEffect(() => {
     const ch = supabase
       .channel(`messages:${roomId}`)
@@ -36,12 +39,10 @@ export function ChatRoomScreen() {
     return () => { supabase.removeChannel(ch); };
   }, [roomId, pushIncoming]);
 
-  // 새 메시지 도착 시 스크롤
   useEffect(() => {
     setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
   }, [messages.length]);
 
-  // place 메시지: PlacePicker에서 돌아올 때 store 소비
   useFocusEffect(useCallback(() => {
     const p = usePlacePickStore.getState().consume();
     if (p) {
@@ -54,11 +55,7 @@ export function ChatRoomScreen() {
     const t = text.trim();
     if (!t) return;
     setText('');
-    try {
-      await sendText(roomId, t);
-    } catch (e: any) {
-      Alert.alert('전송 실패', e.message);
-    }
+    try { await sendText(roomId, t); } catch (e: any) { Alert.alert('전송 실패', e.message); }
   }
 
   async function pickAndSendImage() {
@@ -71,42 +68,44 @@ export function ChatRoomScreen() {
     const objectKey = `${roomId}/${Date.now()}.${ext}`;
     const contentType = asset.mimeType ?? `image/${ext}`;
     try {
-      // RN: fetch + arrayBuffer 패턴이 blob()보다 안정적
       const ab = await (await fetch(asset.uri)).arrayBuffer();
-      const { error } = await supabase.storage.from('chat-images').upload(objectKey, ab, {
-        contentType, upsert: false,
-      });
+      const { error } = await supabase.storage.from('chat-images').upload(objectKey, ab, { contentType, upsert: false });
       if (error) throw error;
       await sendImage(roomId, `chat-images/${objectKey}`);
     } catch (e: any) {
-      console.log('[upload] failed', e);
       Alert.alert('업로드 실패', e.message ?? String(e));
     }
   }
 
   return (
-    <KeyboardAvoidingView style={s.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <FlatList
-        ref={listRef}
-        data={messages}
-        keyExtractor={(m) => m.id}
-        renderItem={({ item }) => <MessageBubble msg={item} mine={item.sender_id === me} />}
-        ListEmptyComponent={<Text style={s.empty}>첫 메시지를 보내보세요</Text>}
-      />
-      <View style={s.inputRow}>
-        <Pressable style={s.iconBtn} onPress={pickAndSendImage}><Text>🖼</Text></Pressable>
-        <Pressable style={s.iconBtn} onPress={() => nav.navigate('PlacePicker')}><Text>📍</Text></Pressable>
-        <TextInput style={s.input} value={text} onChangeText={setText} placeholder="메시지" multiline />
-        <Pressable style={s.sendBtn} onPress={send}><Text style={{ color: '#fff' }}>전송</Text></Pressable>
-      </View>
-    </KeyboardAvoidingView>
+    <ScreenContainer header={<Header title="대화" back />}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={80}>
+        <FlatList
+          ref={listRef}
+          style={{ flex: 1 }}
+          data={messages}
+          keyExtractor={(m) => m.id}
+          renderItem={({ item }) => <MessageBubble msg={item} mine={item.sender_id === me} />}
+          ListEmptyComponent={<Text style={s.empty}>첫 메시지를 보내보세요</Text>}
+          contentContainerStyle={{ paddingTop: spacing(2), paddingBottom: spacing(2) }}
+        />
+        <View style={s.inputRow}>
+          <Pressable style={s.iconBtn} onPress={pickAndSendImage}><Text style={s.iconTxt}>🖼</Text></Pressable>
+          <Pressable style={s.iconBtn} onPress={() => nav.navigate('PlacePicker')}><Text style={s.iconTxt}>📍</Text></Pressable>
+          <Input style={s.textInput} value={text} onChangeText={setText} placeholder="메시지" multiline />
+          <Pressable style={s.sendBtn} onPress={send}><Text style={s.sendTxt}>전송</Text></Pressable>
+        </View>
+      </KeyboardAvoidingView>
+    </ScreenContainer>
   );
 }
+
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#fff' },
-  inputRow: { flexDirection: 'row', alignItems: 'flex-end', padding: 8, borderTopWidth: 1, borderColor: '#eee' },
-  iconBtn: { padding: 10 },
-  input: { flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 18, paddingHorizontal: 12, paddingVertical: 8, maxHeight: 120 },
-  sendBtn: { backgroundColor: '#111', borderRadius: 18, paddingHorizontal: 16, paddingVertical: 10, marginLeft: 6 },
-  empty: { textAlign: 'center', marginTop: 64, color: '#999' },
+  empty: { textAlign: 'center', marginTop: 64, color: 'rgba(255,255,255,0.85)', fontFamily: fontFamily.regular, fontSize: fontSize.base },
+  inputRow: { flexDirection: 'row', alignItems: 'flex-end', padding: spacing(2), backgroundColor: colors.brandPrimaryDark },
+  iconBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', marginRight: spacing(1) },
+  iconTxt: { fontSize: 20 },
+  textInput: { flex: 1, marginRight: spacing(2), maxHeight: 100 },
+  sendBtn: { backgroundColor: colors.brandSecondary, borderRadius: radius.xs, paddingHorizontal: spacing(3), paddingVertical: spacing(2.5) },
+  sendTxt: { color: colors.ink, fontFamily: fontFamily.bold, fontSize: fontSize.sm },
 });

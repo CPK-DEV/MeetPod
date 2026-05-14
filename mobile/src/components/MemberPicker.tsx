@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { listMembers, type GroupMember } from '@/api/groups';
-import { listFriends, type FriendSummary } from '@/api/friendships';
+import { listMembers } from '@/api/groups';
+import { listFriends } from '@/api/friendships';
 import { useAuthStore } from '@/store/authStore';
+import { Avatar } from '@/ui/Avatar';
+import { colors, fontFamily, fontSize, radius, spacing } from '@/theme';
 
 interface Props {
   mode: 'group' | 'friends';
@@ -11,9 +13,11 @@ interface Props {
   onChange: (next: Set<string>) => void;
 }
 
+interface Item { id: string; label: string; }
+
 export function MemberPicker({ mode, groupId, selectedIds, onChange }: Props) {
   const me = useAuthStore((s) => s.profile?.id);
-  const [items, setItems] = useState<{ id: string; label: string }[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -21,7 +25,6 @@ export function MemberPicker({ mode, groupId, selectedIds, onChange }: Props) {
         const ms = await listMembers(groupId);
         const others = ms.filter((m) => m.user_id !== me).map((m) => ({ id: m.user_id, label: m.user_id }));
         setItems(others);
-        // group 약속: 기본 전체 선택
         if (selectedIds.size === 0) onChange(new Set(others.map((o) => o.id)));
       } else {
         const fs = await listFriends();
@@ -45,7 +48,10 @@ export function MemberPicker({ mode, groupId, selectedIds, onChange }: Props) {
         const checked = selectedIds.has(item.id);
         return (
           <Pressable key={item.id} style={s.row} onPress={() => toggle(item.id)}>
-            <Text style={s.box}>{checked ? '☑' : '☐'}</Text>
+            <View style={[s.checkbox, checked && s.checkboxOn]}>
+              {checked ? <Text style={s.check}>✓</Text> : null}
+            </View>
+            <Avatar userId={item.id} name={item.label} size={28} />
             <Text style={s.label}>{item.label}</Text>
           </Pressable>
         );
@@ -53,9 +59,12 @@ export function MemberPicker({ mode, groupId, selectedIds, onChange }: Props) {
     </View>
   );
 }
+
 const s = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
-  box: { fontSize: 22, marginRight: 12 },
-  label: { fontSize: 16 },
-  empty: { color: '#999', textAlign: 'center', padding: 24 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing(2) },
+  checkbox: { width: 20, height: 20, borderRadius: radius.xs, borderWidth: 2, borderColor: colors.border, marginRight: spacing(2.5), alignItems: 'center', justifyContent: 'center' },
+  checkboxOn: { backgroundColor: colors.surfaceDark, borderColor: colors.surfaceDark },
+  check: { color: colors.brandSecondary, fontFamily: fontFamily.black, fontSize: 14, lineHeight: 16 },
+  label: { color: colors.ink, fontFamily: fontFamily.medium, fontSize: fontSize.base, marginLeft: spacing(2.5), flex: 1 },
+  empty: { color: colors.muted, fontFamily: fontFamily.regular, fontSize: fontSize.sm, paddingVertical: spacing(4) },
 });

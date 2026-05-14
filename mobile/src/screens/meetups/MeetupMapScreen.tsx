@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker } from 'react-native-maps';
 import { useRoute } from '@react-navigation/native';
 import * as Location from 'expo-location';
@@ -8,6 +9,7 @@ import { getMeetup, type Meetup } from '@/api/meetups';
 import { useAuthStore } from '@/store/authStore';
 import { useLocationStore } from '@/store/locationStore';
 import { shouldTrack } from '@/lib/location_tracker';
+import { colors, fontFamily, fontSize, radius, spacing } from '@/theme';
 
 interface Ping { user_id: string; lat: number; lng: number; recorded_at: string; }
 
@@ -22,11 +24,10 @@ export function MeetupMapScreen() {
 
   useEffect(() => { getMeetup(id).then(setMeetup); }, [id]);
 
-  // 백그라운드 권한이 없으면 포그라운드 watchPosition로 fallback
   useEffect(() => {
     if (!meetup || !myId) return;
-    if (tracking === id) return;                  // 이미 백그라운드 트래킹 중
-    if (!shouldTrack(meetup)) return;             // 윈도우 밖
+    if (tracking === id) return;
+    if (!shouldTrack(meetup)) return;
 
     let sub: Location.LocationSubscription | null = null;
     let cancelled = false;
@@ -56,7 +57,6 @@ export function MeetupMapScreen() {
 
   useEffect(() => {
     let cancelled = false;
-
     (async () => {
       const since = new Date(Date.now() - 5 * 60_000).toISOString();
       const { data } = await supabase
@@ -65,7 +65,6 @@ export function MeetupMapScreen() {
         .eq('meetup_id', id)
         .gte('recorded_at', since)
         .order('recorded_at', { ascending: false });
-
       if (cancelled || !data) return;
       const next: Record<string, Ping> = {};
       for (const r of data as Ping[]) {
@@ -76,8 +75,7 @@ export function MeetupMapScreen() {
 
     const ch = supabase
       .channel(`pings:${id}`)
-      .on(
-        'postgres_changes',
+      .on('postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'location_pings', filter: `meetup_id=eq.${id}` },
         (payload) => {
           const r = payload.new as Ping;
@@ -85,7 +83,6 @@ export function MeetupMapScreen() {
         },
       )
       .subscribe();
-
     return () => { cancelled = true; supabase.removeChannel(ch); };
   }, [id]);
 
@@ -96,10 +93,10 @@ export function MeetupMapScreen() {
     longitudeDelta: 0.02,
   }), [meetup]);
 
-  if (!meetup) return <View style={s.root}><Text>로딩중...</Text></View>;
+  if (!meetup) return <SafeAreaView style={s.root}><Text style={s.loading}>로딩중…</Text></SafeAreaView>;
 
   return (
-    <View style={s.root}>
+    <SafeAreaView edges={['top']} style={s.root}>
       <MapView style={{ flex: 1 }} initialRegion={initialRegion}>
         <Marker coordinate={{ latitude: meetup.place_lat, longitude: meetup.place_lng }} pinColor="green" title={meetup.place_name} />
         {Object.values(pings).map((p) => (
@@ -114,11 +111,17 @@ export function MeetupMapScreen() {
             : '약속 시간이 가까워지면 자동으로 공유가 시작돼요'}
         </Text>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
+
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#fff' },
-  banner: { position: 'absolute', bottom: 16, left: 16, right: 16, backgroundColor: 'rgba(0,0,0,0.8)', padding: 12, borderRadius: 10 },
-  bannerText: { color: '#fff', textAlign: 'center' },
+  root: { flex: 1, backgroundColor: colors.brandPrimary },
+  loading: { color: colors.inkInverse, padding: spacing(4) },
+  banner: {
+    position: 'absolute', bottom: 100, left: spacing(3), right: spacing(3),
+    backgroundColor: colors.surfaceDark, borderRadius: radius.sm,
+    padding: spacing(3),
+  },
+  bannerText: { color: colors.inkInverse, fontFamily: fontFamily.medium, fontSize: fontSize.sm, textAlign: 'center' },
 });

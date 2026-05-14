@@ -3,6 +3,7 @@ import { View, Text, Image, StyleSheet, Pressable, Linking, Modal, Dimensions } 
 import MapView, { Marker } from 'react-native-maps';
 import { supabase } from '@/lib/supabase';
 import type { Message } from '@/api/chat';
+import { colors, fontFamily, fontSize, radius, spacing } from '@/theme';
 
 interface Props { msg: Message; mine: boolean; }
 
@@ -83,18 +84,18 @@ export function MessageBubble({ msg, mine }: Props) {
   );
 }
 const s = StyleSheet.create({
-  row: { flexDirection: 'row', marginVertical: 3, paddingHorizontal: 8 },
+  row: { flexDirection: 'row', marginVertical: 3, paddingHorizontal: spacing(2) },
   rowMine: { justifyContent: 'flex-end' },
-  bubble: { maxWidth: '78%', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8 },
-  mine: { backgroundColor: '#111' },
-  theirs: { backgroundColor: '#eee' },
-  textMine: { color: '#fff', fontSize: 15 },
-  textTheirs: { color: '#111', fontSize: 15 },
-  image: { width: 220, height: 220, borderRadius: 8 },
-  imageLoading: { backgroundColor: '#ccc', justifyContent: 'center', alignItems: 'center' },
-  loadingText: { color: '#666' },
+  bubble: { maxWidth: '78%', borderRadius: radius.xs, paddingHorizontal: spacing(3), paddingVertical: spacing(2) },
+  mine: { backgroundColor: colors.brandSecondary },
+  theirs: { backgroundColor: colors.surface },
+  textMine: { color: colors.ink, fontFamily: fontFamily.semibold, fontSize: fontSize.base },
+  textTheirs: { color: colors.ink, fontFamily: fontFamily.regular, fontSize: fontSize.base },
+  image: { width: 220, height: 220, borderRadius: radius.xs },
+  imageLoading: { backgroundColor: colors.border, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { color: colors.muted, fontFamily: fontFamily.regular, fontSize: fontSize.sm },
   viewerBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center' },
   place: { width: 240 },
-  placeName: { fontSize: 14, fontWeight: '600' },
-  placeAddr: { fontSize: 12, color: '#555' },
+  placeName: { color: colors.ink, fontFamily: fontFamily.bold, fontSize: fontSize.base },
+  placeAddr: { color: colors.muted, fontFamily: fontFamily.regular, fontSize: fontSize.sm },
 });

@@ -24,7 +24,10 @@ function hash(s: string): number {
 
 function initials(name?: string, userId?: string): string {
   const src = (name && name.trim()) || (userId ?? '?');
-  return src.replace(/[^A-Za-z가-힣]/g, '').slice(0, 2).toUpperCase() || '?';
+  const korean = src.match(/[가-힣]/g);
+  if (korean && korean.length > 0) return korean.slice(0, 2).join('');
+  const latin = src.replace(/[^A-Za-z]/g, '');
+  return latin.slice(0, 2).toUpperCase() || '?';
 }
 
 export function Avatar({ userId, name, uri, size = 28 }: Props) {

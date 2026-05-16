@@ -4,18 +4,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { colors, radius, fontFamily, spacing, shadows } from '@/theme';
 
-const ICONS: Record<string, string> = {
-  Meetups: '📅',
-  Groups:  '👥',
-  Chats:   '💬',
-  Me:      '🙂',
-};
-
-const LABELS: Record<string, string> = {
-  Meetups: '약속',
-  Groups:  '그룹',
-  Chats:   '채팅',
-  Me:      '나',
+const TABS: Record<string, { icon: string; label: string }> = {
+  Meetups: { icon: '📅', label: '약속' },
+  Groups:  { icon: '👥', label: '그룹' },
+  Chats:   { icon: '💬', label: '채팅' },
+  Me:      { icon: '🙂', label: '나' },
 };
 
 export function TabBarFloating({ state, navigation }: BottomTabBarProps) {
@@ -31,8 +24,8 @@ export function TabBarFloating({ state, navigation }: BottomTabBarProps) {
           };
           return (
             <Pressable key={route.key} onPress={onPress} style={[s.tab, focused && s.tabActive]}>
-              <Text style={[s.icon, focused && s.iconActive]}>{ICONS[route.name] ?? '•'}</Text>
-              <Text style={[s.label, focused && s.labelActive]}>{LABELS[route.name] ?? route.name}</Text>
+              <Text style={[s.icon, focused && s.iconActive]}>{TABS[route.name]?.icon ?? '•'}</Text>
+              <Text style={[s.label, focused && s.labelActive]}>{TABS[route.name]?.label ?? route.name}</Text>
             </Pressable>
           );
         })}

@@ -26,6 +26,7 @@ export function MeetupListScreen() {
   useFocusEffect(useCallback(() => { refresh(false); }, [refresh]));
 
   const items = ids.map((i) => byId[i]);
+  const upcomingCount = items.filter((m) => m.status !== 'cancelled' && m.status !== 'ended').length;
 
   return (
     <ScreenContainer
@@ -33,7 +34,7 @@ export function MeetupListScreen() {
       header={
         <Header
           title="약속"
-          subtitle={`${items.length}건 예정`}
+          subtitle={`${upcomingCount}건 예정`}
           action={<HeaderButton icon="+" onPress={() => nav.navigate('MeetupCreate', {})} />}
         />
       }

@@ -6,7 +6,7 @@ type Variant = 'primary' | 'ghostOnOrange' | 'dangerOnSurface' | 'dark';
 
 interface Props {
   label: string;
-  onPress: () => void;
+  onPress: () => void | Promise<void>;
   variant?: Variant;
   loading?: boolean;
   disabled?: boolean;

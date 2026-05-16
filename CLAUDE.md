@@ -32,6 +32,11 @@ cd mobile
 npx expo start --tunnel            # or --clear after .env changes
 ```
 
+## Git
+
+- **Repository**: https://github.com/CPK-DEV/MeetPod
+- **Default branch**: `main`
+
 ## Production
 
 - **Backend (Vercel)**: `https://backend-ochre-six-23.vercel.app` (project `backend` on team `austins-projects-be59bdd0`).

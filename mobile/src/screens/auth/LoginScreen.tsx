@@ -26,15 +26,29 @@ export function LoginScreen() {
       if (error) throw error;
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
       if (result.type !== 'success') { setLoading(null); return; }
-      const url = new URL(result.url.replace('#', '?'));
-      const access_token = url.searchParams.get('access_token');
-      const refresh_token = url.searchParams.get('refresh_token');
-      if (!access_token || !refresh_token) throw new Error('missing tokens in callback');
-      const { data: sessData, error: setErr } = await supabase.auth.setSession({ access_token, refresh_token });
-      if (setErr || !sessData.session) throw setErr ?? new Error('failed to set session');
-      await hydrate(sessData.session);
+
+      let session;
+      if (result.url.includes('code=')) {
+        // PKCE flow (supabase-js v2 default)
+        const code = new URL(result.url).searchParams.get('code');
+        if (!code) throw new Error('missing code in callback');
+        const { data: d, error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error || !d.session) throw error ?? new Error('failed to exchange code');
+        session = d.session;
+      } else {
+        // Implicit flow fallback
+        const url = new URL(result.url.replace('#', '?'));
+        const access_token = url.searchParams.get('access_token');
+        const refresh_token = url.searchParams.get('refresh_token');
+        if (!access_token || !refresh_token) throw new Error('missing tokens in callback');
+        const { data: d, error } = await supabase.auth.setSession({ access_token, refresh_token });
+        if (error || !d.session) throw error ?? new Error('failed to set session');
+        session = d.session;
+      }
+      await hydrate(session);
     } catch (e: any) {
-      Alert.alert('로그인 실패', e.message ?? String(e));
+      const detail = e.response?.data?.detail ?? e.response?.data ?? '';
+      Alert.alert('로그인 실패', `${e.message ?? String(e)}\n${detail}`);
     } finally {
       setLoading(null);
     }

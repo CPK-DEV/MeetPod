@@ -9,7 +9,7 @@
     },
     "production": {
       "android": { "buildType": "app-bundle" },
-      "ios": {},
+      "ios": { "autoIncrement": "buildNumber" },
       "channel": "production"
     }
   },

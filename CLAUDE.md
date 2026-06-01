@@ -39,7 +39,7 @@ npx expo start --tunnel            # or --clear after .env changes
 
 ## Production
 
-- **Backend (Vercel)**: `https://backend-ochre-six-23.vercel.app` (project `backend` on team `austins-projects-be59bdd0`).
+- **Backend (Vercel)**: `https://backend-ochre-six-23.vercel.app` (project `meetpod_backend` on team `austins-projects-be59bdd0`).
 - **Supabase project ref**: `pogblwrknxxufckdfwaa`.
 - **Edge Function**: `push-worker` invoked every minute by pg_cron via pg_net.
 

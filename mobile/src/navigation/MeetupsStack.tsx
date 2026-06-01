@@ -10,7 +10,7 @@ const S = createNativeStackNavigator();
 
 export function MeetupsStack() {
   return (
-    <S.Navigator>
+    <S.Navigator screenOptions={{ headerShown: false }}>
       <S.Screen name="MeetupList" component={MeetupListScreen} options={{ title: '약속' }} />
       <S.Screen name="MeetupCreate" component={MeetupCreateScreen} options={{ title: '새 약속' }} />
       <S.Screen name="MeetupDetail" component={MeetupDetailScreen} options={{ title: '' }} />

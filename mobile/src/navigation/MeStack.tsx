@@ -8,7 +8,7 @@ const S = createNativeStackNavigator();
 
 export function MeStack() {
   return (
-    <S.Navigator>
+    <S.Navigator screenOptions={{ headerShown: false }}>
       <S.Screen name="Me" component={MeScreen} options={{ title: '내 정보' }} />
       <S.Screen name="FriendList" component={FriendListScreen} options={{ title: '친구' }} />
       <S.Screen name="FriendInvite" component={FriendInviteScreen} options={{ title: '친구 초대' }} />

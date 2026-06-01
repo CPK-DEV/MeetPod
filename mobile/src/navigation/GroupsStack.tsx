@@ -10,7 +10,7 @@ const S = createNativeStackNavigator();
 
 export function GroupsStack() {
   return (
-    <S.Navigator>
+    <S.Navigator screenOptions={{ headerShown: false }}>
       <S.Screen name="GroupList" component={GroupListScreen} options={{ title: '그룹' }} />
       <S.Screen name="GroupCreate" component={GroupCreateScreen} options={{ title: '그룹 만들기' }} />
       <S.Screen name="GroupDetail" component={GroupDetailScreen} options={{ title: '' }} />

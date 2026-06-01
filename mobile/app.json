@@ -16,13 +16,17 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.cpkworks.meetpod",
+      "appleTeamId": "S656J6V43T",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "약속 시간 동안 친구와 위치를 공유하기 위해 사용합니다.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "약속 시간 동안 백그라운드에서도 위치를 공유하기 위해 사용합니다.",
         "UIBackgroundModes": [
           "location",
+          "fetch",
+          "location",
           "fetch"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -68,6 +72,12 @@
         "projectId": "7a8ffc12-65cb-4229-953f-59fdece717a4"
       }
     },
-    "owner": "harrycpkworks"
+    "owner": "harrycpkworks",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/7a8ffc12-65cb-4229-953f-59fdece717a4"
+    }
   }
 }

@@ -8,7 +8,7 @@ const S = createNativeStackNavigator();
 
 export function ChatsStack() {
   return (
-    <S.Navigator>
+    <S.Navigator screenOptions={{ headerShown: false }}>
       <S.Screen name="ChatList" component={ChatListScreen} options={{ title: '채팅' }} />
       <S.Screen name="ChatRoom" component={ChatRoomScreen} options={{ title: '대화' }} />
       <S.Screen name="PlacePicker" component={PlacePickerScreen} options={{ title: '장소 공유' }} />

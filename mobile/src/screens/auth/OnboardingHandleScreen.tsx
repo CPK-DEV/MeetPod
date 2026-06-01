@@ -21,15 +21,16 @@ export function OnboardingHandleScreen() {
     setBusy(true);
     try { await setHandleAction(handle); }
     catch (e: any) {
-      const msg = e.response?.data?.detail ?? e.message;
-      Alert.alert('핸들 설정 실패', String(msg));
+      const detail = e.response?.data?.detail ?? e.message;
+      const msg = detail === 'handle taken' ? '이미 존재하는 닉네임입니다.' : String(detail);
+      Alert.alert('닉네임 설정 실패', msg);
     } finally { setBusy(false); }
   }
 
   return (
     <SafeAreaView style={s.root}>
       <View style={{ flex: 1, justifyContent: 'center' }}>
-        <Text style={s.title}>핸들을 정해주세요</Text>
+        <Text style={s.title}>닉네임을 정해주세요</Text>
         <Text style={s.desc}>친구가 회원님을 식별하는 ID입니다. 이후 변경할 수 없어요.</Text>
         <View style={s.atWrap}>
           <Text style={s.at}>@</Text>

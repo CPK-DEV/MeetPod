@@ -28,6 +28,8 @@ class Group(BaseModel):
 class GroupMember(BaseModel):
     user_id: str
     role: Literal["owner", "admin", "member"]
+    display_name: str | None = None
+    handle: str | None = None
 
 
 class RoleUpdate(BaseModel):

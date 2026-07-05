@@ -23,7 +23,7 @@ export function GroupMembersScreen() {
 
   function actions(m: GroupMember) {
     if (!canManage || m.user_id === me) return;
-    Alert.alert('멤버 관리', m.user_id, [
+    Alert.alert('멤버 관리', m.handle ?? m.display_name ?? m.user_id, [
       m.role === 'admin'
         ? { text: '일반 멤버로', onPress: async () => { await setMemberRole(id, m.user_id, 'member'); load(); } }
         : { text: '관리자 지정', onPress: async () => { await setMemberRole(id, m.user_id, 'admin'); load(); } },
@@ -41,9 +41,9 @@ export function GroupMembersScreen() {
         renderItem={({ item }) => (
           <Card variant="row" onPress={() => actions(item)}>
             <View style={s.row}>
-              <Avatar userId={item.user_id} name={item.user_id} size={36} />
+              <Avatar userId={item.user_id} name={item.handle ?? item.display_name ?? item.user_id} size={36} />
               <View style={{ flex: 1, marginLeft: spacing(3) }}>
-                <Text style={s.id}>{item.user_id}</Text>
+                <Text style={s.id}>{item.handle ?? item.display_name ?? item.user_id}</Text>
               </View>
               <Badge tone={item.role === 'owner' ? 'today' : 'neutral'}>{item.role}</Badge>
             </View>

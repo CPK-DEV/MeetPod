@@ -24,7 +24,9 @@ export function LoginScreen() {
         options: { redirectTo, skipBrowserRedirect: true },
       });
       if (error) throw error;
-      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo, {
+        preferEphemeralSession: true,
+      });
       if (result.type !== 'success') { setLoading(null); return; }
 
       let session;

@@ -22,11 +22,14 @@ export interface Meetup {
   location_share_minutes_before: number;
   status: 'scheduled' | 'active' | 'ended' | 'cancelled';
   created_at: string;
+  my_status: 'pending' | 'going' | 'declined' | null;
 }
 export interface Participant {
   user_id: string;
-  status: string;
+  status: 'pending' | 'going' | 'declined';
   joined_at: string;
+  display_name: string | null;
+  handle: string | null;
 }
 
 export interface MeetupCreatePayload {
@@ -51,6 +54,9 @@ export const createMeetup = (body: MeetupCreatePayload) =>
 
 export const cancelMeetup = (id: string) =>
   apiClient.post<Meetup>(`/meetups/${id}/cancel`).then(r => r.data);
+
+export const respondToMeetup = (id: string, status: 'going' | 'declined') =>
+  apiClient.post<Meetup>(`/meetups/${id}/rsvp`, { status }).then(r => r.data);
 
 export const listParticipants = (id: string) =>
   apiClient.get<Participant[]>(`/meetups/${id}/participants`).then(r => r.data);

@@ -23,7 +23,8 @@ export function MemberPicker({ mode, groupId, selectedIds, onChange }: Props) {
     (async () => {
       if (mode === 'group' && groupId) {
         const ms = await listMembers(groupId);
-        const others = ms.filter((m) => m.user_id !== me).map((m) => ({ id: m.user_id, label: m.user_id }));
+        const others = ms.filter((m) => m.user_id !== me)
+          .map((m) => ({ id: m.user_id, label: m.handle ? `@${m.handle} (${m.display_name})` : m.display_name ?? m.user_id }));
         setItems(others);
         if (selectedIds.size === 0) onChange(new Set(others.map((o) => o.id)));
       } else {

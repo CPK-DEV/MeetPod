@@ -46,7 +46,19 @@ def update_group(group_id: str, body: GroupUpdate) -> Group:
 def list_members(group_id: str) -> list[GroupMember]:
     sb = get_supabase()
     rows = sb.table("group_members").select("user_id, role").eq("group_id", group_id).execute().data or []
-    return [GroupMember(**r) for r in rows]
+    if not rows:
+        return []
+    profiles = sb.table("profiles").select("id, display_name, handle") \
+        .in_("id", [r["user_id"] for r in rows]).execute().data or []
+    profile_by_id = {p["id"]: p for p in profiles}
+    return [
+        GroupMember(
+            **r,
+            display_name=profile_by_id.get(r["user_id"], {}).get("display_name"),
+            handle=profile_by_id.get(r["user_id"], {}).get("handle"),
+        )
+        for r in rows
+    ]
 
 
 def set_role(group_id: str, user_id: str, role: str) -> None:

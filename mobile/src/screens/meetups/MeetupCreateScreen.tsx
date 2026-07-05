@@ -25,7 +25,6 @@ export function MeetupCreateScreen() {
   const [starts, setStarts] = useState(new Date(Date.now() + 60 * 60 * 1000));
   const [ends, setEnds] = useState(new Date(Date.now() + 2 * 60 * 60 * 1000));
   const [showStartsPicker, setShowStartsPicker] = useState(false);
-  const [showEndsPicker, setShowEndsPicker] = useState(false);
   const [place, setPlace] = useState<Place | null>(null);
   const [share, setShare] = useState<typeof SHARE_OPTIONS[number]>(20);
   const [reminder, setReminder] = useState<number | null>(30);
@@ -39,13 +38,12 @@ export function MeetupCreateScreen() {
 
   function onStartsChange(d: Date) {
     setStarts(d);
-    if (ends <= d) setEnds(new Date(d.getTime() + 60 * 60 * 1000));
+    setEnds(new Date(d.getTime() + 60 * 60 * 1000));
   }
 
   async function submit() {
     if (!title.trim()) return Alert.alert('제목을 입력하세요');
     if (!place) return Alert.alert('장소를 선택하세요');
-    if (ends <= starts) return Alert.alert('종료 시간이 시작 시간 이후여야 합니다');
 
     const body: MeetupCreatePayload = {
       title: title.trim(),
@@ -85,14 +83,6 @@ export function MeetupCreateScreen() {
           </Pressable>
           {showStartsPicker && (
             <DateTimePicker value={starts} mode="datetime" onChange={(_, d) => { setShowStartsPicker(Platform.OS === 'ios'); if (d) onStartsChange(d); }} />
-          )}
-
-          <Text style={[s.label, { marginTop: spacing(3) }]}>종료</Text>
-          <Pressable style={s.pickerRow} onPress={() => setShowEndsPicker(true)}>
-            <Text style={s.pickerText}>{ends.toLocaleString()}</Text>
-          </Pressable>
-          {showEndsPicker && (
-            <DateTimePicker value={ends} mode="datetime" onChange={(_, d) => { setShowEndsPicker(Platform.OS === 'ios'); if (d) setEnds(d); }} />
           )}
         </Card>
 

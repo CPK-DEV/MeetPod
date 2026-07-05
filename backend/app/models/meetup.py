@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, model_validator
 
 Status = Literal["scheduled", "active", "ended", "cancelled"]
 ShareWindow = Literal[10, 20, 30, 60]
+ParticipantStatus = Literal["pending", "going", "declined"]
 
 
 class Place(BaseModel):
@@ -57,12 +58,19 @@ class Meetup(BaseModel):
     location_share_minutes_before: int
     status: Status
     created_at: datetime
+    my_status: ParticipantStatus | None = None
 
 
 class Participant(BaseModel):
     user_id: str
-    status: str
+    status: ParticipantStatus
     joined_at: datetime
+    display_name: str | None = None
+    handle: str | None = None
+
+
+class RsvpUpdate(BaseModel):
+    status: Literal["going", "declined"]
 
 
 class ReminderUpsert(BaseModel):

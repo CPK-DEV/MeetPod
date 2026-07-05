@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-import { View, StyleSheet, ViewStyle, Pressable } from 'react-native';
+import { View, StyleSheet, StyleProp, ViewStyle, Pressable } from 'react-native';
 import { colors, radius, spacing, shadows } from '@/theme';
 
 type Variant = 'default' | 'hero' | 'row';
@@ -8,7 +8,7 @@ interface Props {
   children: ReactNode;
   variant?: Variant;
   onPress?: () => void;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 const PADDINGS: Record<Variant, ViewStyle> = {

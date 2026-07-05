@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, FlatList, Pressable, StyleSheet, Alert, KeyboardAvoidingView, Platform, Text } from 'react-native';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '@/lib/supabase';
@@ -17,7 +16,6 @@ import { colors, fontFamily, fontSize, radius, spacing } from '@/theme';
 const EMPTY_MESSAGES: Message[] = [];
 
 export function ChatRoomScreen() {
-  const tabBarHeight = useBottomTabBarHeight();
   const nav = useNavigation<any>();
   const route = useRoute<any>();
   const { id: roomId } = route.params;
@@ -82,8 +80,8 @@ export function ChatRoomScreen() {
   }
 
   return (
-    <ScreenContainer header={<Header title="대화" back />}>
-      <KeyboardAvoidingView style={{ flex: 1, marginBottom: tabBarHeight }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={80}>
+    <ScreenContainer hasTabBar header={<Header title="대화" back />}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={80}>
         <FlatList
           ref={listRef}
           style={{ flex: 1 }}

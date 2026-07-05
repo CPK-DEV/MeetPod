@@ -13,5 +13,12 @@
       "channel": "production"
     }
   },
-  "submit": { "production": {} }
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "harry.kim@live.com",
+        "ascAppId": "6775008986"
+      }
+    }
+  }
 }

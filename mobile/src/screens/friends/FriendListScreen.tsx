@@ -28,7 +28,7 @@ export function FriendListScreen() {
           renderItem={({ item }) => (
             <Card variant="row">
               <View style={s.row}>
-                <Avatar userId={item.id} name={item.display_name} uri={item.avatar_url} size={40} />
+                <Avatar userId={item.id} name={item.handle ?? item.display_name} uri={item.avatar_url} size={40} />
                 <View style={{ marginLeft: spacing(3), flex: 1 }}>
                   <Text style={s.name}>{item.display_name}</Text>
                   {item.handle ? <Text style={s.handle}>@{item.handle}</Text> : null}

@@ -6,11 +6,11 @@ from app.dependencies.permissions import (
     require_meetup_editor, require_meetup_participant,
 )
 from app.models.meetup import (
-    Meetup, MeetupCreate, MeetupUpdate, Participant,
+    Meetup, MeetupCreate, MeetupUpdate, Participant, RsvpUpdate,
 )
 from app.services.meetup_service import (
     add_participants, cancel_meetup, create_meetup, get_meetup,
-    list_my_meetups, list_participants, remove_participant, update_meetup,
+    list_my_meetups, list_participants, remove_participant, respond_to_meetup, update_meetup,
 )
 
 router = APIRouter(prefix="/api/meetups", tags=["meetups"])
@@ -46,6 +46,17 @@ def patch_(mid: str, body: MeetupUpdate, _: None = require_meetup_editor()) -> M
 @router.post("/{mid}/cancel", response_model=Meetup)
 def cancel(mid: str, _: None = require_meetup_editor()) -> Meetup:
     return cancel_meetup(mid)
+
+
+@router.post("/{mid}/rsvp", response_model=Meetup)
+def rsvp(
+    mid: str,
+    body: RsvpUpdate,
+    user: CurrentUser = Depends(current_user),
+    _: None = require_meetup_participant(),
+) -> Meetup:
+    respond_to_meetup(mid, user.id, body.status)
+    return get_meetup(mid)
 
 
 @router.get("/{mid}/participants", response_model=list[Participant])

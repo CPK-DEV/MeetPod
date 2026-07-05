@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors, radius, spacing, fontFamily } from '@/theme';
 
-type Tone = 'today' | 'live' | 'ended' | 'cancelled' | 'neutral';
+type Tone = 'today' | 'live' | 'ended' | 'cancelled' | 'neutral' | 'pending';
 
 const TONES: Record<Tone, { bg: string; fg: string }> = {
   today:     { bg: colors.brandSecondary, fg: colors.ink },
@@ -10,6 +10,7 @@ const TONES: Record<Tone, { bg: string; fg: string }> = {
   ended:     { bg: colors.mutedLight,     fg: colors.inkInverse },
   cancelled: { bg: colors.danger,         fg: colors.inkInverse },
   neutral:   { bg: colors.surfaceSubtle,  fg: colors.ink },
+  pending:   { bg: colors.warning,        fg: colors.inkInverse },
 };
 
 interface Props {

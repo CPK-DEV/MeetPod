@@ -5,7 +5,7 @@ import MapView, { Marker } from 'react-native-maps';
 import { useRoute } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { supabase } from '@/lib/supabase';
-import { getMeetup, type Meetup } from '@/api/meetups';
+import { getMeetup, listParticipants, type Meetup, type Participant } from '@/api/meetups';
 import { useAuthStore } from '@/store/authStore';
 import { useLocationStore } from '@/store/locationStore';
 import { shouldTrack } from '@/lib/location_tracker';
@@ -16,6 +16,7 @@ interface Ping { user_id: string; lat: number; lng: number; recorded_at: string;
 export function MeetupMapScreen() {
   const { id } = (useRoute<any>()).params;
   const [meetup, setMeetup] = useState<Meetup | null>(null);
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [pings, setPings] = useState<Record<string, Ping>>({});
   const [fgTracking, setFgTracking] = useState(false);
   const tracking = useLocationStore((s) => s.trackingMeetupId);
@@ -23,6 +24,11 @@ export function MeetupMapScreen() {
   const myId = useAuthStore((s) => s.profile?.id);
 
   useEffect(() => { getMeetup(id).then(setMeetup); }, [id]);
+  useEffect(() => { listParticipants(id).then(setParticipants); }, [id]);
+
+  const nameById = useMemo(() => Object.fromEntries(
+    participants.map((p) => [p.user_id, p.handle ?? p.display_name ?? p.user_id]),
+  ), [participants]);
 
   useEffect(() => {
     if (!meetup || !myId) return;
@@ -100,7 +106,7 @@ export function MeetupMapScreen() {
       <MapView style={{ flex: 1 }} initialRegion={initialRegion}>
         <Marker coordinate={{ latitude: meetup.place_lat, longitude: meetup.place_lng }} pinColor="green" title={meetup.place_name} />
         {Object.values(pings).map((p) => (
-          <Marker key={p.user_id} coordinate={{ latitude: p.lat, longitude: p.lng }} title={p.user_id} />
+          <Marker key={p.user_id} coordinate={{ latitude: p.lat, longitude: p.lng }} title={nameById[p.user_id] ?? p.user_id} />
         ))}
       </MapView>
       <View style={s.banner}>

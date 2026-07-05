@@ -11,6 +11,8 @@ export interface Group {
 export interface GroupMember {
   user_id: string;
   role: 'owner' | 'admin' | 'member';
+  display_name: string | null;
+  handle: string | null;
 }
 
 export const listGroups = () => apiClient.get<Group[]>('/groups').then(r => r.data);

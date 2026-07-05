@@ -9,8 +9,8 @@ from app.utils.db import single
 from app.utils.supabase_client import get_supabase
 
 
-def _row_to_meetup(row: dict) -> Meetup:
-    return Meetup(**row)
+def _row_to_meetup(row: dict, my_status: str | None = None) -> Meetup:
+    return Meetup(**row, my_status=my_status)
 
 
 def create_meetup(creator_id: str, body: MeetupCreate) -> Meetup:
@@ -51,7 +51,8 @@ def create_meetup(creator_id: str, body: MeetupCreate) -> Meetup:
     mid = row["id"]
 
     sb.table("meetup_participants").insert(
-        [{"meetup_id": mid, "user_id": uid} for uid in participant_ids]
+        [{"meetup_id": mid, "user_id": uid, "status": "going" if uid == creator_id else "pending"}
+         for uid in participant_ids]
     ).execute()
 
     sb.table("chat_rooms").insert({"kind": "meetup", "ref_id": mid}).execute()
@@ -78,15 +79,15 @@ def get_meetup(meetup_id: str) -> Meetup:
 
 def list_my_meetups(user_id: str, include_ended: bool = False) -> list[Meetup]:
     sb = get_supabase()
-    parts = sb.table("meetup_participants").select("meetup_id").eq("user_id", user_id).execute().data or []
-    ids = [p["meetup_id"] for p in parts]
-    if not ids:
+    parts = sb.table("meetup_participants").select("meetup_id, status").eq("user_id", user_id).execute().data or []
+    status_by_id = {p["meetup_id"]: p["status"] for p in parts}
+    if not status_by_id:
         return []
-    q = sb.table("meetups").select("*").in_("id", ids).order("starts_at", desc=False)
+    q = sb.table("meetups").select("*").in_("id", list(status_by_id.keys())).order("starts_at", desc=False)
     if not include_ended:
         q = q.in_("status", ["scheduled", "active"])
     rows = q.execute().data or []
-    return [_row_to_meetup(r) for r in rows]
+    return [_row_to_meetup(r, status_by_id.get(r["id"])) for r in rows]
 
 
 def update_meetup(meetup_id: str, body: MeetupUpdate) -> Meetup:
@@ -128,11 +129,29 @@ def cancel_meetup(meetup_id: str) -> Meetup:
     return get_meetup(meetup_id)
 
 
+def respond_to_meetup(meetup_id: str, user_id: str, rsvp_status: str) -> None:
+    sb = get_supabase()
+    sb.table("meetup_participants").update({"status": rsvp_status}) \
+        .eq("meetup_id", meetup_id).eq("user_id", user_id).execute()
+
+
 def list_participants(meetup_id: str) -> list[Participant]:
     sb = get_supabase()
     rows = sb.table("meetup_participants").select("user_id, status, joined_at") \
         .eq("meetup_id", meetup_id).execute().data or []
-    return [Participant(**r) for r in rows]
+    if not rows:
+        return []
+    profiles = sb.table("profiles").select("id, display_name, handle") \
+        .in_("id", [r["user_id"] for r in rows]).execute().data or []
+    profile_by_id = {p["id"]: p for p in profiles}
+    return [
+        Participant(
+            **r,
+            display_name=profile_by_id.get(r["user_id"], {}).get("display_name"),
+            handle=profile_by_id.get(r["user_id"], {}).get("handle"),
+        )
+        for r in rows
+    ]
 
 
 def add_participants(meetup_id: str, user_ids: list[str]) -> None:

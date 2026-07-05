@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { View, Text, FlatList, RefreshControl, StyleSheet } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useAuthStore } from '@/store/authStore';
 import { useMeetupsStore } from '@/store/meetupsStore';
 import { ScreenContainer, TABBAR_RESERVED_HEIGHT } from '@/ui/ScreenContainer';
 import { Header } from '@/ui/Header';
@@ -22,6 +23,7 @@ function badgeFor(status: string, startsAt: string) {
 
 export function MeetupListScreen() {
   const nav = useNavigation<any>();
+  const me = useAuthStore((s) => s.profile?.id);
   const { ids, byId, loading, refresh } = useMeetupsStore();
   useFocusEffect(useCallback(() => { refresh(false); }, [refresh]));
 
@@ -53,9 +55,20 @@ export function MeetupListScreen() {
           refreshControl={<RefreshControl tintColor={colors.inkInverse} refreshing={loading} onRefresh={() => refresh(false)} />}
           renderItem={({ item }) => {
             const b = badgeFor(item.status, item.starts_at);
+            const isMine = item.creator_id === me;
+            const isPending = item.my_status === 'pending';
             return (
-              <Card variant="row" onPress={() => nav.navigate('MeetupDetail', { id: item.id })}>
-                {b && <View style={{ marginBottom: spacing(1.5) }}><Badge tone={b.tone}>{b.label}</Badge></View>}
+              <Card
+                variant="row"
+                style={[isMine && s.mine, isPending && s.pending]}
+                onPress={() => nav.navigate('MeetupDetail', { id: item.id })}
+              >
+                {(b || isPending) && (
+                  <View style={s.badgeRow}>
+                    {isPending && <Badge tone="pending">응답 대기</Badge>}
+                    {b && <Badge tone={b.tone}>{b.label}</Badge>}
+                  </View>
+                )}
                 <Text style={s.title}>{item.title}</Text>
                 <Text style={s.meta}>📍 {item.place_name} · {new Date(item.starts_at).toLocaleString()}</Text>
               </Card>
@@ -70,4 +83,7 @@ export function MeetupListScreen() {
 const s = StyleSheet.create({
   title: { color: colors.ink, fontFamily: fontFamily.bold, fontSize: fontSize.md },
   meta:  { color: colors.muted, fontFamily: fontFamily.regular, fontSize: fontSize.sm, marginTop: spacing(1) },
+  mine:  { backgroundColor: '#FFF6CC', borderColor: colors.brandSecondary, borderWidth: 1 },
+  pending: { backgroundColor: colors.surfaceSubtle, borderColor: colors.warning, borderWidth: 1, borderStyle: 'dashed' },
+  badgeRow: { flexDirection: 'row', gap: spacing(1.5), marginBottom: spacing(1.5) },
 });

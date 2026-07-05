@@ -19,7 +19,7 @@ export function MeScreen() {
       <ScrollView contentContainerStyle={{ paddingTop: spacing(2), paddingBottom: TABBAR_RESERVED_HEIGHT }}>
         <Card variant="hero">
           <View style={s.heroRow}>
-            <Avatar userId={profile?.id ?? '?'} name={profile?.display_name} uri={profile?.avatar_url ?? undefined} size={64} />
+            <Avatar userId={profile?.id ?? '?'} name={profile?.handle ?? profile?.display_name} uri={profile?.avatar_url ?? undefined} size={64} />
             <View style={{ marginLeft: spacing(3), flex: 1 }}>
               <Text style={s.name}>{profile?.display_name}</Text>
               <Text style={s.handle}>@{profile?.handle}</Text>

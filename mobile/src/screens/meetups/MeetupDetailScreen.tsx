@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
-import { cancelMeetup, getMeetup, listParticipants, type Meetup, type Participant } from '@/api/meetups';
+import { cancelMeetup, getMeetup, listParticipants, respondToMeetup, type Meetup, type Participant } from '@/api/meetups';
 import { listRooms } from '@/api/chat';
 import { ScreenContainer, TABBAR_RESERVED_HEIGHT } from '@/ui/ScreenContainer';
 import { Header } from '@/ui/Header';
@@ -19,6 +19,7 @@ export function MeetupDetailScreen() {
   const [m, setM] = useState<Meetup | null>(null);
   const [parts, setParts] = useState<Participant[]>([]);
   const [roomId, setRoomId] = useState<string | null>(null);
+  const [responding, setResponding] = useState(false);
 
   useFocusEffect(useCallback(() => {
     getMeetup(id).then(setM);
@@ -29,6 +30,18 @@ export function MeetupDetailScreen() {
     });
   }, [id]));
 
+  async function respond(rsvpStatus: 'going' | 'declined') {
+    setResponding(true);
+    try {
+      await respondToMeetup(id, rsvpStatus);
+      listParticipants(id).then(setParts);
+    } catch (e: any) {
+      Alert.alert('처리 실패', e.response?.data?.detail ?? e.message);
+    } finally {
+      setResponding(false);
+    }
+  }
+
   if (!m) return (
     <ScreenContainer hasTabBar header={<Header title="" back />}>
       <View style={{ padding: spacing(4) }}><Text style={{ color: colors.inkInverse }}>로딩중…</Text></View>
@@ -37,6 +50,7 @@ export function MeetupDetailScreen() {
 
   const isCreator = m.creator_id === me;
   const editable = m.status === 'scheduled' && isCreator;
+  const myStatus = parts.find((p) => p.user_id === me)?.status;
 
   return (
     <ScreenContainer hasTabBar header={<Header title={m.title} back />}>
@@ -48,7 +62,7 @@ export function MeetupDetailScreen() {
           <View style={s.avatars}>
             {parts.map((p) => (
               <View key={p.user_id} style={{ marginRight: spacing(1.5) }}>
-                <Avatar userId={p.user_id} name={p.user_id} size={32} />
+                <Avatar userId={p.user_id} name={p.handle ?? p.display_name ?? p.user_id} size={32} />
               </View>
             ))}
           </View>
@@ -57,6 +71,19 @@ export function MeetupDetailScreen() {
         <PlaceCard name={m.place_name} lat={m.place_lat} lng={m.place_lng} address={m.place_address ?? undefined} />
 
         <View style={{ paddingHorizontal: spacing(3), marginTop: spacing(2) }}>
+          {myStatus === 'pending' && (
+            <>
+              <View style={s.rsvpRow}>
+                <View style={{ flex: 1, marginRight: spacing(2) }}>
+                  <Button label="참여하기" onPress={() => respond('going')} loading={responding} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Button label="거절하기" variant="dangerOnSurface" onPress={() => respond('declined')} loading={responding} />
+                </View>
+              </View>
+              <View style={{ height: spacing(2) }} />
+            </>
+          )}
           {roomId && (
             <>
               <Button label="약속 채팅 열기" variant="primary" onPress={() => nav.navigate('Chats', { screen: 'ChatRoom', params: { id: roomId, kind: 'meetup' } })} />
@@ -85,4 +112,5 @@ export function MeetupDetailScreen() {
 const s = StyleSheet.create({
   meta: { color: colors.muted, fontFamily: fontFamily.regular, fontSize: fontSize.base, marginTop: spacing(1) },
   avatars: { flexDirection: 'row', marginTop: spacing(3) },
+  rsvpRow: { flexDirection: 'row' },
 });

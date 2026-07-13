@@ -273,8 +273,8 @@ trg_meetups_after_insert:
 |------|------|------|------|
 | `meetup_id` | `uuid` | FK→`meetups.id` ON DELETE CASCADE | |
 | `user_id` | `uuid` | FK→`profiles.id` ON DELETE CASCADE | |
-| `status` | `text` | NOT NULL DEFAULT 'going' CHECK IN ('going') | MVP는 going만. RSVP는 Phase 2. |
-| `share_location` | `boolean` | NOT NULL DEFAULT true | 시나리오 9: 본인이 위치공유 OFF |
+| `status` | `text` | NOT NULL DEFAULT 'pending' CHECK IN ('pending','going','declined') | RSVP 구현됨 (migration 014). 생성자는 즉시 `going`, 초대받은 사람은 `pending`으로 시작 → `POST /api/meetups/{id}/rsvp`로 `going`/`declined` 응답 |
+| `share_location` | `boolean` | NOT NULL DEFAULT true | 시나리오 9: 본인이 위치공유 OFF (미구현 — 설계만 존재) |
 | `joined_at` | `timestamptz` | DEFAULT now() | |
 
 **제약:**
@@ -510,3 +510,4 @@ $$);
 | 일자 | 내용 |
 |------|------|
 | 2026-05-03 | 최초 작성 (Phase 1~4 MVP 기준) |
+| 2026-07-12 | `meetup_participants.status`에 RSVP 구현 (`pending`/`going`/`declined`, migration `014_participant_rsvp.sql`). `share_location` 컬럼은 여전히 미구현 상태로 남아있음을 명시 |

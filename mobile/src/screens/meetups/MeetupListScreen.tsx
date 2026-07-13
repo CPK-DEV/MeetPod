@@ -1,5 +1,5 @@
-import React, { useCallback } from 'react';
-import { View, Text, FlatList, RefreshControl, StyleSheet } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { View, Text, Pressable, FlatList, RefreshControl, StyleSheet } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '@/store/authStore';
 import { useMeetupsStore } from '@/store/meetupsStore';
@@ -10,7 +10,10 @@ import { Card } from '@/ui/Card';
 import { Badge } from '@/ui/Badge';
 import { EmptyState } from '@/ui/EmptyState';
 import { Button } from '@/ui/Button';
-import { colors, fontFamily, fontSize, spacing } from '@/theme';
+import { colors, fontFamily, fontSize, radius, spacing } from '@/theme';
+
+const INACTIVE_STATUSES = new Set(['ended', 'cancelled']);
+type Tab = 'active' | 'inactive';
 
 function badgeFor(status: string, startsAt: string) {
   if (status === 'cancelled') return { tone: 'cancelled' as const, label: '취소' };
@@ -25,10 +28,23 @@ export function MeetupListScreen() {
   const nav = useNavigation<any>();
   const me = useAuthStore((s) => s.profile?.id);
   const { ids, byId, loading, refresh } = useMeetupsStore();
-  useFocusEffect(useCallback(() => { refresh(false); }, [refresh]));
+  const [tab, setTab] = useState<Tab>('active');
+  useFocusEffect(useCallback(() => {
+    refresh(true);
+    const interval = setInterval(() => refresh(true), 60_000);
+    return () => clearInterval(interval);
+  }, [refresh]));
 
-  const items = ids.map((i) => byId[i]);
-  const upcomingCount = items.filter((m) => m.status !== 'cancelled' && m.status !== 'ended').length;
+  const all = ids.map((i) => byId[i]);
+  const { active, inactive } = useMemo(() => {
+    const act = all.filter((m) => !INACTIVE_STATUSES.has(m.status));
+    const inact = all.filter((m) => INACTIVE_STATUSES.has(m.status));
+    act.sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+    inact.sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
+    return { active: act, inactive: inact };
+  }, [all]);
+
+  const items = tab === 'active' ? active : inactive;
 
   return (
     <ScreenContainer
@@ -36,23 +52,31 @@ export function MeetupListScreen() {
       header={
         <Header
           title="약속"
-          subtitle={`${upcomingCount}건 예정`}
+          subtitle={`${all.length}건`}
           action={<HeaderButton icon="+" onPress={() => nav.navigate('MeetupCreate', {})} />}
         />
       }
     >
+      <View style={s.tabs}>
+        <Pressable style={[s.tab, tab === 'active' && s.tabOn]} onPress={() => setTab('active')}>
+          <Text style={tab === 'active' ? s.tabOnText : s.tabText}>액티브 ({active.length})</Text>
+        </Pressable>
+        <Pressable style={[s.tab, tab === 'inactive' && s.tabOn]} onPress={() => setTab('inactive')}>
+          <Text style={tab === 'inactive' ? s.tabOnText : s.tabText}>인액티브 ({inactive.length})</Text>
+        </Pressable>
+      </View>
       {items.length === 0 ? (
         <EmptyState
-          title="예정된 약속이 없어요"
+          title={tab === 'active' ? '예정된 약속이 없어요' : '종료된 약속이 없어요'}
           description="친구와 첫 약속을 만들어보세요."
-          action={<Button label="새 약속 만들기" onPress={() => nav.navigate('MeetupCreate', {})} />}
+          action={tab === 'active' ? <Button label="새 약속 만들기" onPress={() => nav.navigate('MeetupCreate', {})} /> : undefined}
         />
       ) : (
         <FlatList
           contentContainerStyle={{ paddingTop: spacing(2), paddingBottom: TABBAR_RESERVED_HEIGHT }}
           data={items}
           keyExtractor={(m) => m.id}
-          refreshControl={<RefreshControl tintColor={colors.inkInverse} refreshing={loading} onRefresh={() => refresh(false)} />}
+          refreshControl={<RefreshControl tintColor={colors.inkInverse} refreshing={loading} onRefresh={() => refresh(true)} />}
           renderItem={({ item }) => {
             const b = badgeFor(item.status, item.starts_at);
             const isMine = item.creator_id === me;
@@ -86,4 +110,9 @@ const s = StyleSheet.create({
   mine:  { backgroundColor: '#FFF6CC', borderColor: colors.brandSecondary, borderWidth: 1 },
   pending: { backgroundColor: colors.surfaceSubtle, borderColor: colors.warning, borderWidth: 1, borderStyle: 'dashed' },
   badgeRow: { flexDirection: 'row', gap: spacing(1.5), marginBottom: spacing(1.5) },
+  tabs: { flexDirection: 'row', paddingHorizontal: spacing(3), marginBottom: spacing(2), gap: spacing(2) },
+  tab: { flex: 1, alignItems: 'center', paddingVertical: spacing(2), borderRadius: radius.sm, backgroundColor: colors.ghostOverlay },
+  tabOn: { backgroundColor: colors.surfaceDark },
+  tabText: { color: colors.inkInverse, fontFamily: fontFamily.semibold, fontSize: fontSize.sm },
+  tabOnText: { color: colors.brandSecondary, fontFamily: fontFamily.bold, fontSize: fontSize.sm },
 });

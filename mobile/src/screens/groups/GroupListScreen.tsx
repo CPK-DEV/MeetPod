@@ -19,7 +19,11 @@ export function GroupListScreen() {
     setRefreshing(true);
     try { setItems(await listGroups()); } finally { setRefreshing(false); }
   }, []);
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  useFocusEffect(useCallback(() => {
+    load();
+    const interval = setInterval(load, 60_000);
+    return () => clearInterval(interval);
+  }, [load]));
 
   return (
     <ScreenContainer

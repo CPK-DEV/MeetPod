@@ -6,6 +6,7 @@ from fastapi import HTTPException, status
 
 from app.models.chat import ChatRoom, Message, MessageSend, UploadUrlResponse
 from app.utils.db import single
+from app.utils.push import send_expo_push
 from app.utils.supabase_client import get_supabase
 
 BUCKET = "chat-images"
@@ -22,6 +23,43 @@ def _is_room_member(room_id: str, user_id: str) -> bool:
                       .eq("group_id", room["ref_id"]).eq("user_id", user_id)) is not None
     return single(sb.table("meetup_participants").select("user_id")
                   .eq("meetup_id", room["ref_id"]).eq("user_id", user_id)) is not None
+
+
+def _room_member_ids(room_id: str) -> list[str]:
+    sb = get_supabase()
+    room = single(sb.table("chat_rooms").select("kind, ref_id").eq("id", room_id))
+    if not room:
+        return []
+    if room["kind"] == "group":
+        rows = sb.table("group_members").select("user_id").eq("group_id", room["ref_id"]).execute().data or []
+    else:
+        rows = sb.table("meetup_participants").select("user_id").eq("meetup_id", room["ref_id"]).execute().data or []
+    return [r["user_id"] for r in rows]
+
+
+def _notify_new_message(room_id: str, sender_id: str, body: MessageSend) -> None:
+    sb = get_supabase()
+    recipient_ids = [uid for uid in _room_member_ids(room_id) if uid != sender_id]
+    if not recipient_ids:
+        return
+
+    recipients = sb.table("profiles").select("expo_push_token") \
+        .in_("id", recipient_ids).execute().data or []
+    tokens = [r["expo_push_token"] for r in recipients if r.get("expo_push_token")]
+    if not tokens:
+        return
+
+    sender = single(sb.table("profiles").select("display_name, handle").eq("id", sender_id))
+    title = (sender or {}).get("handle") or (sender or {}).get("display_name") or "MeetPod"
+
+    if body.kind == "text":
+        preview = (body.body or "")[:80]
+    elif body.kind == "image":
+        preview = "사진을 보냈습니다"
+    else:
+        preview = "장소를 공유했습니다"
+
+    send_expo_push(tokens, title, preview, {"room_id": room_id})
 
 
 def get_room(room_id: str) -> ChatRoom:
@@ -77,6 +115,7 @@ def send_message(room_id: str, user_id: str, body: MessageSend) -> Message:
         "place_payload": body.place_payload,
     }
     row = sb.table("messages").insert(payload).execute().data[0]
+    _notify_new_message(room_id, user_id, body)
     return Message(**row)
 
 

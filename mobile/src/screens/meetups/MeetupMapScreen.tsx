@@ -1,30 +1,39 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker } from 'react-native-maps';
-import { useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { supabase } from '@/lib/supabase';
 import { getMeetup, listParticipants, type Meetup, type Participant } from '@/api/meetups';
+import { listRooms } from '@/api/chat';
 import { useAuthStore } from '@/store/authStore';
 import { useLocationStore } from '@/store/locationStore';
 import { shouldTrack } from '@/lib/location_tracker';
-import { colors, fontFamily, fontSize, radius, spacing } from '@/theme';
+import { colors, fontFamily, fontSize, radius, shadows, spacing } from '@/theme';
 
 interface Ping { user_id: string; lat: number; lng: number; recorded_at: string; }
 
 export function MeetupMapScreen() {
+  const nav = useNavigation<any>();
   const { id } = (useRoute<any>()).params;
   const [meetup, setMeetup] = useState<Meetup | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [pings, setPings] = useState<Record<string, Ping>>({});
   const [fgTracking, setFgTracking] = useState(false);
+  const [roomId, setRoomId] = useState<string | null>(null);
   const tracking = useLocationStore((s) => s.trackingMeetupId);
   const permission = useLocationStore((s) => s.permission);
   const myId = useAuthStore((s) => s.profile?.id);
 
   useEffect(() => { getMeetup(id).then(setMeetup); }, [id]);
   useEffect(() => { listParticipants(id).then(setParticipants); }, [id]);
+  useEffect(() => {
+    listRooms().then((rooms) => {
+      const r = rooms.find((x) => x.kind === 'meetup' && x.ref_id === id);
+      setRoomId(r?.id ?? null);
+    });
+  }, [id]);
 
   const nameById = useMemo(() => Object.fromEntries(
     participants.map((p) => [p.user_id, p.handle ?? p.display_name ?? p.user_id]),
@@ -99,7 +108,16 @@ export function MeetupMapScreen() {
     longitudeDelta: 0.02,
   }), [meetup]);
 
-  if (!meetup) return <SafeAreaView style={s.root}><Text style={s.loading}>로딩중…</Text></SafeAreaView>;
+  if (!meetup) return (
+    <SafeAreaView edges={['top']} style={s.root}>
+      <View style={s.topRow}>
+        <Pressable style={s.roundBtn} onPress={() => nav.goBack()} hitSlop={8}>
+          <Text style={s.roundBtnIcon}>‹</Text>
+        </Pressable>
+      </View>
+      <Text style={s.loading}>로딩중…</Text>
+    </SafeAreaView>
+  );
 
   return (
     <SafeAreaView edges={['top']} style={s.root}>
@@ -109,6 +127,20 @@ export function MeetupMapScreen() {
           <Marker key={p.user_id} coordinate={{ latitude: p.lat, longitude: p.lng }} title={nameById[p.user_id] ?? p.user_id} />
         ))}
       </MapView>
+      <View style={s.topRow}>
+        <Pressable style={s.roundBtn} onPress={() => nav.goBack()} hitSlop={8}>
+          <Text style={s.roundBtnIcon}>‹</Text>
+        </Pressable>
+        {roomId && (
+          <Pressable
+            style={s.roundBtn}
+            onPress={() => nav.navigate('Chats', { screen: 'ChatRoom', params: { id: roomId, kind: 'meetup', ref_id: id } })}
+            hitSlop={8}
+          >
+            <Text style={s.roundBtnIcon}>💬</Text>
+          </Pressable>
+        )}
+      </View>
       <View style={s.banner}>
         <Text style={s.bannerText}>
           {tracking === id ? '내 위치 공유 중 (백그라운드)'
@@ -130,4 +162,14 @@ const s = StyleSheet.create({
     padding: spacing(3),
   },
   bannerText: { color: colors.inkInverse, fontFamily: fontFamily.medium, fontSize: fontSize.sm, textAlign: 'center' },
+  topRow: {
+    position: 'absolute', top: spacing(3), left: spacing(3), right: spacing(3),
+    flexDirection: 'row', justifyContent: 'space-between',
+  },
+  roundBtn: {
+    width: 40, height: 40, borderRadius: radius.md,
+    backgroundColor: colors.surfaceDark, alignItems: 'center', justifyContent: 'center',
+    ...shadows.card,
+  },
+  roundBtnIcon: { color: colors.inkInverse, fontSize: 22, fontFamily: fontFamily.regular, lineHeight: 24 },
 });

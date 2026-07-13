@@ -10,6 +10,7 @@ import { sendImage, sendPlace, sendText, type Message } from '@/api/chat';
 import { MessageBubble } from '@/components/MessageBubble';
 import { ScreenContainer } from '@/ui/ScreenContainer';
 import { Header } from '@/ui/Header';
+import { HeaderButton } from '@/ui/HeaderButton';
 import { Input } from '@/ui/Input';
 import { colors, fontFamily, fontSize, radius, spacing } from '@/theme';
 
@@ -18,7 +19,7 @@ const EMPTY_MESSAGES: Message[] = [];
 export function ChatRoomScreen() {
   const nav = useNavigation<any>();
   const route = useRoute<any>();
-  const { id: roomId } = route.params;
+  const { id: roomId, kind, ref_id: meetupId } = route.params;
   const me = useAuthStore((s) => s.profile?.id) ?? '';
   const messages = useChatStore((s) => s.messages[roomId] ?? EMPTY_MESSAGES);
   const load = useChatStore((s) => s.loadMessages);
@@ -80,7 +81,23 @@ export function ChatRoomScreen() {
   }
 
   return (
-    <ScreenContainer hasTabBar header={<Header title="대화" back />}>
+    <ScreenContainer
+      hasTabBar
+      header={
+        <Header
+          title="대화"
+          back
+          action={
+            kind === 'meetup' && meetupId ? (
+              <View style={s.headerActions}>
+                <HeaderButton icon="📅" onPress={() => nav.navigate('Meetups', { screen: 'MeetupDetail', params: { id: meetupId } })} />
+                <HeaderButton icon="🗺️" onPress={() => nav.navigate('Meetups', { screen: 'MeetupMap', params: { id: meetupId } })} />
+              </View>
+            ) : undefined
+          }
+        />
+      }
+    >
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={80}>
         <FlatList
           ref={listRef}
@@ -106,8 +123,9 @@ export function ChatRoomScreen() {
 }
 
 const s = StyleSheet.create({
+  headerActions: { flexDirection: 'row', gap: spacing(2) },
   empty: { textAlign: 'center', marginTop: 64, color: 'rgba(255,255,255,0.85)', fontFamily: fontFamily.regular, fontSize: fontSize.base },
-  inputRow: { flexDirection: 'row', alignItems: 'flex-end', padding: spacing(2), backgroundColor: colors.brandPrimaryDark },
+  inputRow: { flexDirection: 'row', alignItems: 'flex-end', padding: spacing(2), marginBottom: spacing(2), backgroundColor: colors.brandPrimaryDark },
   iconBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', marginRight: spacing(1) },
   iconBtnDisabled: { opacity: 0.4 },
   iconTxt: { fontSize: 20 },

@@ -65,8 +65,12 @@ def participants(mid: str, _: None = require_meetup_participant()) -> list[Parti
 
 
 @router.post("/{mid}/participants", status_code=status.HTTP_204_NO_CONTENT)
-def add(mid: str, body: AddParticipantsBody, _: None = require_meetup_editor()) -> None:
-    add_participants(mid, body.user_ids)
+def add(
+    mid: str, body: AddParticipantsBody,
+    user: CurrentUser = Depends(current_user),
+    _: None = require_meetup_editor(),
+) -> None:
+    add_participants(mid, user.id, body.user_ids)
 
 
 @router.delete("/{mid}/participants/me", status_code=status.HTTP_204_NO_CONTENT)

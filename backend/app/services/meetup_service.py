@@ -6,11 +6,31 @@ from app.models.meetup import (
     Meetup, MeetupCreate, MeetupUpdate, Participant,
 )
 from app.utils.db import single
+from app.utils.push import send_expo_push
 from app.utils.supabase_client import get_supabase
 
 
 def _row_to_meetup(row: dict, my_status: str | None = None) -> Meetup:
     return Meetup(**row, my_status=my_status)
+
+
+def _notify_invited(meetup_id: str, inviter_id: str, invitee_ids: list[str], title: str) -> None:
+    recipient_ids = [uid for uid in invitee_ids if uid != inviter_id]
+    if not recipient_ids:
+        return
+    sb = get_supabase()
+    recipients = sb.table("profiles").select("expo_push_token") \
+        .in_("id", recipient_ids).execute().data or []
+    tokens = [r["expo_push_token"] for r in recipients if r.get("expo_push_token")]
+
+    inviter = single(sb.table("profiles").select("display_name, handle").eq("id", inviter_id))
+    inviter_name = (inviter or {}).get("handle") or (inviter or {}).get("display_name") or "친구"
+
+    send_expo_push(
+        tokens, "새 약속 초대",
+        f"{inviter_name}님이 '{title}' 약속에 초대했어요",
+        {"meetup_id": meetup_id},
+    )
 
 
 def create_meetup(creator_id: str, body: MeetupCreate) -> Meetup:
@@ -56,6 +76,7 @@ def create_meetup(creator_id: str, body: MeetupCreate) -> Meetup:
     ).execute()
 
     sb.table("chat_rooms").insert({"kind": "meetup", "ref_id": mid}).execute()
+    _notify_invited(mid, creator_id, participant_ids, body.title)
 
     if body.self_reminder_minutes_before is not None:
         notify_at = body.starts_at - timedelta(minutes=body.self_reminder_minutes_before)
@@ -154,12 +175,14 @@ def list_participants(meetup_id: str) -> list[Participant]:
     ]
 
 
-def add_participants(meetup_id: str, user_ids: list[str]) -> None:
+def add_participants(meetup_id: str, inviter_id: str, user_ids: list[str]) -> None:
     sb = get_supabase()
     if not user_ids:
         return
     rows = [{"meetup_id": meetup_id, "user_id": uid} for uid in user_ids]
     sb.table("meetup_participants").upsert(rows).execute()
+    meetup = single(sb.table("meetups").select("title").eq("id", meetup_id))
+    _notify_invited(meetup_id, inviter_id, user_ids, (meetup or {}).get("title", "약속"))
 
 
 def remove_participant(meetup_id: str, user_id: str) -> None:

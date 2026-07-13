@@ -105,7 +105,7 @@ def test_add_participants_requires_editor(client, auth_as):
             e.return_value = True
             r = client.post("/api/meetups/m1/participants", json={"user_ids": ["u2", "u3"]})
     assert r.status_code == 204
-    a.assert_called_with("m1", ["u2", "u3"])
+    a.assert_called_with("m1", "u1", ["u2", "u3"])
 
 
 def test_leave_meetup(client, auth_as):

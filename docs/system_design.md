@@ -72,11 +72,12 @@
 | profile 부트스트랩 | Mobile → FastAPI | handle 충돌 검증, 트랜잭션 |
 | 그룹/약속 CRUD | Mobile → FastAPI | 권한 검증, 멤버 default 채움, chat_room/reminder 생성 묶음 트랜잭션 |
 | 초대 코드 발급/소비 | Mobile → FastAPI | 코드 충돌·만료·max_uses 원자성 |
-| 채팅 송신 | Mobile → FastAPI | 권한, archived 체크, push fanout 트리거 |
+| 채팅 송신 | Mobile → FastAPI | 권한, archived 체크, 메시지 INSERT 직후 FastAPI가 동기로 Expo Push 발송 |
 | 채팅 수신 | Mobile ← Supabase Realtime | WS 직결 (FastAPI 우회) |
 | 위치 핑 송신 | Mobile → Supabase 직접 INSERT | 짧은 주기 (10s), latency 민감 |
 | 위치 핑 수신 | Mobile ← Supabase Realtime | 동일 |
-| 푸시 발송 | Edge Function → Expo Push | DB 가까운 곳에서 fanout |
+| 약속 초대 푸시 | FastAPI → Expo Push | 약속 생성/멤버 추가 직후 FastAPI가 동기 호출 (Edge Function 아님) |
+| 약속 리마인더 푸시 | pg_cron → Edge Function(`push-worker`) → Expo Push | 매분 폴링, `meetup_reminders` 큐 발송 후 DELETE |
 | 이미지 업로드 | Mobile → Supabase Storage | 직접 (signed URL 또는 RLS) |
 
 ### 1.3 인증 흐름
@@ -371,8 +372,10 @@ MeetPod/mobile/
 | GET | `/api/meetups/{id}` | 약속 상세 + 참여자 | participant |
 | PATCH | `/api/meetups/{id}` | 정보 수정 | creator/group admin |
 | POST | `/api/meetups/{id}/cancel` | 취소 | creator/group admin |
-| POST | `/api/meetups/{id}/participants` | 멤버 추가 | creator/group admin |
-| DELETE | `/api/meetups/{id}/participants/{uid}` | 멤버 제거/탈퇴 | self or admin |
+| GET | `/api/meetups/{id}/participants` | 참여자 목록 (이름/닉네임 포함) | participant |
+| POST | `/api/meetups/{id}/participants` | 멤버 추가 (초대 푸시 발송) | creator/group admin |
+| DELETE | `/api/meetups/{id}/participants/me` | 본인 탈퇴 | self |
+| POST | `/api/meetups/{id}/rsvp` | 초대 응답 (`going`/`declined`) — 참여자는 `pending`으로 시작 | participant |
 | PATCH | `/api/meetups/{id}/share-location` | 본인 위치공유 토글 | self |
 | PUT | `/api/meetups/{id}/reminders/me` | 본인 알림 시각 | self |
 | POST | `/api/chat/{room_id}/messages` | 메시지 전송 (text/image/place) | room member |
@@ -519,3 +522,4 @@ eas submit -p android
 | 일자 | 내용 |
 |------|------|
 | 2026-05-03 | 최초 작성 (MVP) |
+| 2026-07-12 | 채팅 메시지·약속 초대 푸시를 FastAPI가 메시지/참여자 INSERT 직후 동기 호출로 구현 (Edge Function/큐 방식 아님). 리마인더 푸시만 기존 설계대로 pg_cron + `push-worker`. 약속 RSVP(`pending`/`going`/`declined`) 및 `/api/meetups/{id}/rsvp` 추가 |

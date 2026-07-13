@@ -86,7 +86,7 @@ export function MeetupDetailScreen() {
           )}
           {roomId && (
             <>
-              <Button label="약속 채팅 열기" variant="primary" onPress={() => nav.navigate('Chats', { screen: 'ChatRoom', params: { id: roomId, kind: 'meetup' } })} />
+              <Button label="약속 채팅 열기" variant="primary" onPress={() => nav.navigate('Chats', { screen: 'ChatRoom', params: { id: roomId, kind: 'meetup', ref_id: m.id } })} />
               <View style={{ height: spacing(2) }} />
             </>
           )}

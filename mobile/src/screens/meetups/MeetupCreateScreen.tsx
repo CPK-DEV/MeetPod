@@ -25,6 +25,7 @@ export function MeetupCreateScreen() {
   const [starts, setStarts] = useState(new Date(Date.now() + 60 * 60 * 1000));
   const [ends, setEnds] = useState(new Date(Date.now() + 2 * 60 * 60 * 1000));
   const [showStartsPicker, setShowStartsPicker] = useState(false);
+  const [androidStep, setAndroidStep] = useState<'date' | 'time' | null>(null);
   const [place, setPlace] = useState<Place | null>(null);
   const [share, setShare] = useState<typeof SHARE_OPTIONS[number]>(20);
   const [reminder, setReminder] = useState<number | null>(30);
@@ -78,11 +79,21 @@ export function MeetupCreateScreen() {
 
         <Card>
           <Text style={s.label}>시작</Text>
-          <Pressable style={s.pickerRow} onPress={() => setShowStartsPicker(true)}>
+          <Pressable
+            style={s.pickerRow}
+            onPress={() => (Platform.OS === 'ios' ? setShowStartsPicker(true) : setAndroidStep('date'))}
+          >
             <Text style={s.pickerText}>{starts.toLocaleString()}</Text>
           </Pressable>
-          {showStartsPicker && (
-            <DateTimePicker value={starts} mode="datetime" onChange={(_, d) => { setShowStartsPicker(Platform.OS === 'ios'); if (d) onStartsChange(d); }} />
+          {Platform.OS === 'ios' && showStartsPicker && (
+            <DateTimePicker value={starts} mode="datetime" onChange={(_, d) => { setShowStartsPicker(false); if (d) onStartsChange(d); }} />
+          )}
+          {/* Android: mode="datetime"는 iOS 전용이라 date → time 순서로 두 번 띄운다 */}
+          {Platform.OS === 'android' && androidStep === 'date' && (
+            <DateTimePicker value={starts} mode="date" onChange={(_, d) => { setAndroidStep(null); if (d) { setStarts(d); setAndroidStep('time'); } }} />
+          )}
+          {Platform.OS === 'android' && androidStep === 'time' && (
+            <DateTimePicker value={starts} mode="time" onChange={(_, d) => { setAndroidStep(null); if (d) onStartsChange(d); }} />
           )}
         </Card>
 
